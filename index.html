@@ -426,9 +426,9 @@
 <div class="wrap">
 
   <div class="setup-banner" id="setupBanner" style="display:none;">
-    ⚠️ لم يتم ضبط رابط جوجل شيت بعد. افتح ملف الصفحة بمحرر نصوص، ابحث عن السطر
-    <code>const API_URL = "https://script.google.com/macros/s/AKfycbyLtp87-yxvtylcQ40Nf-UPuG12-gGB_yNLWGqWRGaw1bQPHt2bZzitmIpgVTHXtjtpPw/exec";</code>
-    واستبدل النص بين علامتي التنصيص برابط الـ Web App اللي حصلت عليه من Apps Script، ثم احفظ الملف وأعد فتحه.
+    ⚠️ لم يتم ضبط رابط جوجل شيت بعد. افتح ملف الصفحة بمحرر نصوص، انزل لآخر الملف بالقرب من كلمة
+    <code>startPolling</code> وابحث عن السطر اللي يبدأ بـ <code>const API_URL =</code>
+    (سطر واحد فقط، داخل الكود البرمجي وليس هذا الصندوق) واستبدل النص بين علامتي التنصيص برابط الـ Web App، ثم احفظ الملف وأعد فتحه.
   </div>
 
   <div class="top">
@@ -516,7 +516,7 @@ const LAB_LABELS = {chem:"مختبر الكيمياء", bio:"مختبر الأح
    ضع هنا رابط "Web app" اللي تحصل عليه بعد نشر Apps Script
    (Deploy > New deployment > Web app > Copy web app URL)
    ============================================================ */
-const API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const API_URL = "https://script.google.com/macros/s/AKfycbyLtp87-yxvtylcQ40Nf-UPuG12-gGB_yNLWGqWRGaw1bQPHt2bZzitmIpgVTHXtjtpPw/exec";
 const POLL_MS = 4000; // كم مرة تتحدّث الصفحة (بالمللي ثانية)
 
 let currentWeek = 1;
