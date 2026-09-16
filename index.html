@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>جدول حجز المختبرات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f7f6;
+    --surface:#ffffff;
+    --surface-2:#eef3f2;
+    --border:#dde5e3;
+    --text:#1e2a27;
+    --text-dim:#5b6b67;
+    --primary:#0d7a5f;
+    --primary-dark:#095c47;
+    --primary-tint:#e2f3ee;
+    --accent:#c98a1f;
+    --accent-tint:#fbf0dd;
+    --danger:#c0392b;
+    --danger-tint:#fbe9e7;
+    --done:#2f9e58;
+    --done-tint:#e5f6ea;
+    --shadow: 0 2px 10px rgba(15,40,35,0.06);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#101614;
+      --surface:#182320;
+      --surface-2:#1f2b27;
+      --border:#2b3733;
+      --text:#eaf2ef;
+      --text-dim:#9db0aa;
+      --primary:#38b58a;
+      --primary-dark:#2c9d7a;
+      --primary-tint:#183028;
+      --accent:#e0ab53;
+      --accent-tint:#2e2617;
+      --danger:#e5786a;
+      --danger-tint:#33201d;
+      --done:#4ecb84;
+      --done-tint:#173322;
+      --shadow: 0 2px 14px rgba(0,0,0,0.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#101614;
+    --surface:#182320;
+    --surface-2:#1f2b27;
+    --border:#2b3733;
+    --text:#eaf2ef;
+    --text-dim:#9db0aa;
+    --primary:#38b58a;
+    --primary-dark:#2c9d7a;
+    --primary-tint:#183028;
+    --accent:#e0ab53;
+    --accent-tint:#2e2617;
+    --danger:#e5786a;
+    --danger-tint:#33201d;
+    --done:#4ecb84;
+    --done-tint:#173322;
+    --shadow: 0 2px 14px rgba(0,0,0,0.35);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Tajawal','Segoe UI',Tahoma,sans-serif;
+    min-height:100vh;
+    padding:14px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+
+  .top{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    margin-bottom:14px;
+  }
+  h1{
+    font-size:1.25rem;
+    font-weight:900;
+    margin:0 0 4px 0;
+    color:var(--primary-dark);
+  }
+  .sub{color:var(--text-dim);font-size:.85rem;margin:0 0 14px 0;}
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .week-box{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--surface-2);
+    border-radius:999px;
+    padding:6px 8px;
+  }
+  .week-box button{
+    width:32px;height:32px;
+    border-radius:50%;
+    border:none;
+    background:var(--primary);
+    color:#fff;
+    font-size:1.1rem;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    line-height:1;
+  }
+  .week-box button:active{transform:scale(.93);}
+  .week-label{
+    font-weight:700;
+    min-width:96px;
+    text-align:center;
+    font-size:.95rem;
+  }
+  .lab-tabs{
+    display:flex;
+    gap:6px;
+    background:var(--surface-2);
+    padding:4px;
+    border-radius:999px;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    max-width:100%;
+    scrollbar-width:none;
+  }
+  .lab-tabs::-webkit-scrollbar{display:none;}
+  .lab-tabs button{
+    border:none;
+    background:transparent;
+    padding:8px 11px;
+    border-radius:999px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.76rem;
+    color:var(--text-dim);
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .lab-tabs button.active{
+    background:var(--primary);
+    color:#fff;
+  }
+
+  .status{
+    font-size:.78rem;
+    color:var(--text-dim);
+    margin-top:10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .export-btn{
+    margin-left:auto;
+    background:var(--primary-tint);
+    color:var(--primary-dark);
+    border:1px solid var(--primary);
+    border-radius:999px;
+    padding:6px 12px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.75rem;
+    cursor:pointer;
+  }
+  .export-btn:disabled{opacity:.55;cursor:default;}
+  .export-msg{
+    width:100%;
+    font-size:.78rem;
+    font-weight:700;
+    padding:8px 12px;
+    border-radius:10px;
+    margin-top:8px;
+  }
+  .export-msg.ok{background:var(--done-tint);color:var(--done);}
+  .export-msg.err{background:var(--danger-tint);color:var(--danger);}
+  .dot{width:7px;height:7px;border-radius:50%;background:#9aa;}
+  .dot.ok{background:#2fbf71;}
+  .dot.bad{background:var(--danger);}
+
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+  thead th{
+    background:var(--primary);
+    color:#fff;
+    font-weight:700;
+    font-size:.82rem;
+    padding:10px 4px;
+    text-align:center;
+  }
+  tbody th{
+    background:var(--surface-2);
+    color:var(--text-dim);
+    font-weight:700;
+    font-size:.78rem;
+    text-align:center;
+    padding:6px 4px;
+    width:52px;
+    border-top:1px solid var(--border);
+  }
+  td{
+    border-top:1px solid var(--border);
+    border-right:1px solid var(--border);
+    padding:5px;
+    vertical-align:top;
+    height:74px;
+    width:19%;
+  }
+  td:last-child{border-left:1px solid var(--border);}
+
+  .cell-empty{
+    width:100%;height:100%;
+    min-height:60px;
+    border:1.5px dashed var(--border);
+    border-radius:10px;
+    background:transparent;
+    color:var(--text-dim);
+    font-family:inherit;
+    font-size:.78rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .cell-empty:hover{
+    border-color:var(--primary);
+    color:var(--primary);
+    background:var(--primary-tint);
+  }
+  .cell-na{
+    width:100%;height:100%;
+    min-height:60px;
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-dim);
+    font-size:.7rem;
+    opacity:.5;
+  }
+  .cell-booked{
+    width:100%;height:100%;
+    min-height:60px;
+    background:var(--accent-tint);
+    border:1.5px solid var(--accent);
+    border-radius:10px;
+    padding:6px 7px;
+    position:relative;
+    cursor:pointer;
+  }
+  .cell-booked .teacher{
+    font-weight:800;
+    font-size:.76rem;
+    color:var(--primary-dark);
+    display:block;
+    margin-bottom:2px;
+    padding-left:16px;
+  }
+  .cell-booked .exp{
+    font-size:.72rem;
+    color:var(--text);
+    display:block;
+    line-height:1.25;
+  }
+  .cell-booked .del{
+    position:absolute;
+    top:3px;
+    left:3px;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:var(--danger);
+    color:#fff;
+    border:none;
+    font-size:.62rem;
+    line-height:1;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .cell-booked.done{
+    background:var(--done-tint);
+    border-color:var(--done);
+  }
+  .cell-booked .done-badge{
+    position:absolute;
+    top:2px;
+    right:3px;
+    font-size:.62rem;
+    font-weight:800;
+    color:var(--done);
+    display:flex;
+    align-items:center;
+    gap:2px;
+  }
+
+  .legend{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-top:12px;
+    font-size:.75rem;
+    color:var(--text-dim);
+  }
+  .legend span{display:flex;align-items:center;gap:5px;}
+  .swatch{width:12px;height:12px;border-radius:4px;display:inline-block;}
+  .swatch.empty{border:1.5px dashed var(--border);}
+  .swatch.booked{background:var(--accent-tint);border:1.5px solid var(--accent);}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;
+    background:rgba(10,20,18,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+    padding:16px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--surface);
+    border-radius:16px;
+    padding:20px;
+    width:100%;
+    max-width:360px;
+    box-shadow:0 10px 40px rgba(0,0,0,.25);
+  }
+  .modal h3{margin:0 0 3px 0;font-size:1rem;color:var(--primary-dark);}
+  .modal .meta{color:var(--text-dim);font-size:.78rem;margin-bottom:14px;}
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block;
+    font-size:.78rem;
+    font-weight:700;
+    color:var(--text-dim);
+    margin-bottom:5px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding:10px 10px;
+    border-radius:10px;
+    border:1.5px solid var(--border);
+    background:var(--bg);
+    color:var(--text);
+    font-family:inherit;
+    font-size:.88rem;
+  }
+  .check-field{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--done-tint);
+    border:1.5px solid var(--done);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:4px;
+  }
+  .check-field input{width:18px;height:18px;accent-color:var(--done);margin:0;}
+  .check-field label{
+    font-size:.82rem;
+    font-weight:700;
+    color:var(--text);
+    margin:0;
+    cursor:pointer;
+  }
+  .modal-actions{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  .btn{
+    flex:1;
+    padding:11px;
+    border-radius:10px;
+    border:none;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.85rem;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-ghost{background:var(--surface-2);color:var(--text);}
+  .btn-danger{background:var(--danger-tint);color:var(--danger);}
+  .hint{font-size:.72rem;color:var(--text-dim);margin-top:10px;text-align:center;}
+  .setup-banner{
+    background:var(--warn-tint, #fdebd0);
+    border:1.5px solid #b9770e;
+    color:#7a4f09;
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:.82rem;
+    line-height:1.8;
+    margin-bottom:14px;
+  }
+  .setup-banner code{
+    display:inline-block;
+    background:#fff;
+    border:1px solid #e6c98a;
+    border-radius:6px;
+    padding:2px 6px;
+    font-size:.75rem;
+    direction:ltr;
+    unicode-bidi:embed;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="setup-banner" id="setupBanner" style="display:none;">
+    ⚠️ لم يتم ضبط رابط جوجل شيت بعد. افتح ملف الصفحة بمحرر نصوص، ابحث عن السطر
+    <code>const API_URL = "https://script.google.com/macros/s/AKfycbyLtp87-yxvtylcQ40Nf-UPuG12-gGB_yNLWGqWRGaw1bQPHt2bZzitmIpgVTHXtjtpPw/exec";</code>
+    واستبدل النص بين علامتي التنصيص برابط الـ Web App اللي حصلت عليه من Apps Script، ثم احفظ الملف وأعد فتحه.
+  </div>
+
+  <div class="top">
+    <h1>🧪 جدول حجز المختبرات</h1>
+    <p class="sub">ثانوية الدفي — مدارس الهيئة الملكية</p>
+
+    <div class="controls">
+      <div class="week-box">
+        <button id="weekPrev">›</button>
+        <span class="week-label">الأسبوع <span id="weekNum">1</span></span>
+        <button id="weekNext">‹</button>
+      </div>
+      <div class="lab-tabs" id="labTabs">
+        <button data-lab="chem" class="active">مختبر الكيمياء</button>
+        <button data-lab="bio">مختبر الأحياء (1)</button>
+        <button data-lab="bio2">مختبر الأحياء (2)</button>
+        <button data-lab="phys">مختبر الفيزياء</button>
+      </div>
+    </div>
+
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">جارِ الاتصال…</span>
+      <button id="exportBtn" class="export-btn">⬇ تحميل Excel</button>
+    </div>
+    <div class="export-msg" id="exportMsg" style="display:none;"></div>
+  </div>
+
+  <div id="tableHost"></div>
+
+  <div class="legend">
+    <span><i class="swatch empty"></i> غير محجوزة — اضغط للحجز</span>
+    <span><i class="swatch booked"></i> محجوزة — اضغط للتعديل أو الحذف</span>
+    <span>✓ تم — علّمها المحضر بعد إجراء التجربة</span>
+  </div>
+  <p class="hint">أي حجز أو تعديل يظهر فورًا لجميع المعلمين.</p>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modalTitle">حجز المختبر</h3>
+    <p class="meta" id="modalMeta"></p>
+    <div class="field">
+      <label>اسم المعلم</label>
+      <select id="teacherSelect"></select>
+    </div>
+    <div class="field">
+      <label>اسم التجربة</label>
+      <input type="text" id="expInput" placeholder="مثال: تفاعل الأحماض مع القواعد">
+    </div>
+    <div class="check-field" id="doneField" style="display:none;">
+      <input type="checkbox" id="doneCheck">
+      <label for="doneCheck">تم إجراء التجربة (يعبّئها المحضر)</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="saveBtn">حفظ الحجز</button>
+    </div>
+    <div class="modal-actions" id="deleteRow" style="display:none;">
+      <button class="btn btn-danger" id="deleteBtn">إلغاء هذا الحجز</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TEACHERS = [
+  "حسين اليامي","ملحم الملحم","نضال السبيت","أحمد المطاوعة","سالم آل عمر",
+  "سالم المالكي","عبدالله بن زارب","محمد العميم","نايف بوخمسين",
+  "هشام القحطاني","وليد البقمي","معيض القحطاني"
+];
+
+const DAYS = [
+  {key:"sun", label:"الأحد", periods:7},
+  {key:"mon", label:"الإثنين", periods:7},
+  {key:"tue", label:"الثلاثاء", periods:6},
+  {key:"wed", label:"الأربعاء", periods:6},
+  {key:"thu", label:"الخميس", periods:6},
+];
+const MAX_PERIOD = 7;
+
+const LAB_LABELS = {chem:"مختبر الكيمياء", bio:"مختبر الأحياء (1)", bio2:"مختبر الأحياء (2)", phys:"مختبر الفيزياء"};
+
+/* ============================================================
+   إعداد الاتصال بجوجل شيت — عدّل السطر التالي فقط:
+   ضع هنا رابط "Web app" اللي تحصل عليه بعد نشر Apps Script
+   (Deploy > New deployment > Web app > Copy web app URL)
+   ============================================================ */
+const API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+const POLL_MS = 4000; // كم مرة تتحدّث الصفحة (بالمللي ثانية)
+
+let currentWeek = 1;
+let currentLab = "chem";
+let bookings = {}; // key -> {id, teacher, experiment, completed}
+let pollTimer = null;
+let lastFetchedList = [];
+let apiReady = API_URL && API_URL.indexOf("PASTE_YOUR") === -1;
+
+const teacherSelect = document.getElementById('teacherSelect');
+TEACHERS.forEach(t=>{
+  const o = document.createElement('option');
+  o.value = t; o.textContent = t;
+  teacherSelect.appendChild(o);
+});
+
+function slotKey(week, lab, day, period){
+  return `w${week}_${lab}_${day}_p${period}`;
+}
+
+/* ---- طبقة الاتصال بجوجل شيت عبر Apps Script ---- */
+async function apiList(){
+  const res = await fetch(`${API_URL}?action=list&t=${Date.now()}`, {method:'GET'});
+  if(!res.ok) throw new Error('network');
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'api');
+  return json.data || [];
+}
+async function apiSet(record){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight on Apps Script
+    body: JSON.stringify({action:'set', record})
+  });
+  if(!res.ok) throw new Error('network');
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'api');
+  return json.data || [];
+}
+async function apiDelete(id){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'delete', id})
+  });
+  if(!res.ok) throw new Error('network');
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'api');
+  return json.data || [];
+}
+
+function renderTable(){
+  const host = document.getElementById('tableHost');
+  let html = '<table><thead><tr><th></th>';
+  DAYS.forEach(d=> html += `<th>${d.label}</th>`);
+  html += '</tr></thead><tbody>';
+  for(let p=1; p<=MAX_PERIOD; p++){
+    html += `<tr><th>ح${p}</th>`;
+    DAYS.forEach(d=>{
+      if(p > d.periods){
+        html += `<td><div class="cell-na">—</div></td>`;
+      } else {
+        const key = slotKey(currentWeek, currentLab, d.key, p);
+        const b = bookings[key];
+        if(b){
+          const doneClass = b.completed ? ' done' : '';
+          const doneBadge = b.completed ? '<span class="done-badge">✓ تم</span>' : '';
+          html += `<td><div class="cell-booked${doneClass}" data-day="${d.key}" data-period="${p}" data-daylabel="${d.label}">
+            <button class="del" data-day="${d.key}" data-period="${p}">✕</button>
+            ${doneBadge}
+            <span class="teacher">${escapeHtml(b.teacher||'')}</span>
+            <span class="exp">${escapeHtml(b.experiment||'')}</span>
+          </div></td>`;
+        } else {
+          html += `<td><button class="cell-empty" data-day="${d.key}" data-period="${p}" data-daylabel="${d.label}">+ حجز</button></td>`;
+        }
+      }
+    });
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  host.innerHTML = html;
+
+  host.querySelectorAll('.cell-empty').forEach(btn=>{
+    btn.addEventListener('click', ()=> openModal(btn.dataset.day, parseInt(btn.dataset.period), btn.dataset.daylabel, null));
+  });
+  host.querySelectorAll('.cell-booked').forEach(cell=>{
+    cell.addEventListener('click', (e)=>{
+      if(e.target.classList.contains('del')) return;
+      const key = slotKey(currentWeek, currentLab, cell.dataset.day, parseInt(cell.dataset.period));
+      openModal(cell.dataset.day, parseInt(cell.dataset.period), cell.dataset.daylabel, bookings[key]);
+    });
+  });
+  host.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      const day = btn.dataset.day, period = parseInt(btn.dataset.period);
+      await deleteBooking(day, period);
+    });
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+let modalCtx = null;
+function openModal(day, period, dayLabel, existing){
+  modalCtx = {day, period};
+  document.getElementById('modalTitle').textContent = existing ? "تعديل الحجز" : "حجز المختبر";
+  const labLabel = LAB_LABELS[currentLab] || currentLab;
+  document.getElementById('modalMeta').textContent = `الأسبوع ${currentWeek} — ${labLabel} — ${dayLabel} — الحصة ${period}`;
+  teacherSelect.value = existing ? existing.teacher : TEACHERS[0];
+  document.getElementById('expInput').value = existing ? existing.experiment : '';
+  document.getElementById('deleteRow').style.display = existing ? 'flex' : 'none';
+  const doneField = document.getElementById('doneField');
+  const doneCheck = document.getElementById('doneCheck');
+  if(existing){
+    doneField.style.display = 'flex';
+    doneCheck.checked = !!existing.completed;
+  } else {
+    doneField.style.display = 'none';
+    doneCheck.checked = false;
+  }
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+  modalCtx = null;
+}
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('overlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'overlay') closeModal();
+});
+
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  if(!modalCtx) return;
+  const teacher = teacherSelect.value;
+  const experiment = document.getElementById('expInput').value.trim();
+  if(!experiment){
+    document.getElementById('expInput').focus();
+    return;
+  }
+  const completed = document.getElementById('doneCheck').checked;
+  await saveBooking(modalCtx.day, modalCtx.period, teacher, experiment, completed);
+  closeModal();
+});
+document.getElementById('deleteBtn').addEventListener('click', async ()=>{
+  if(!modalCtx) return;
+  await deleteBooking(modalCtx.day, modalCtx.period);
+  closeModal();
+});
+
+async function saveBooking(day, period, teacher, experiment, completed){
+  if(!apiReady){ setStatus(false, 'لم يتم ضبط رابط جوجل شيت بعد.'); return; }
+  const id = slotKey(currentWeek, currentLab, day, period);
+  const record = {
+    id, week: currentWeek, lab: currentLab, day, period,
+    teacher, experiment, completed: completed ? 'TRUE' : 'FALSE',
+    updatedAt: new Date().toISOString()
+  };
+  // optimistic UI update
+  bookings[id] = {id, teacher, experiment, completed: !!completed};
+  renderTable();
+  try{
+    const data = await apiSet(record);
+    applyBookingsFromList(data);
+    setStatus(true);
+  }catch(err){
+    console.error(err);
+    setStatus(false, 'تعذّر حفظ الحجز — تحقق من الاتصال وحاول مرة أخرى.');
+  }
+}
+async function deleteBooking(day, period){
+  if(!apiReady) return;
+  const id = slotKey(currentWeek, currentLab, day, period);
+  delete bookings[id];
+  renderTable();
+  try{
+    const data = await apiDelete(id);
+    applyBookingsFromList(data);
+    setStatus(true);
+  }catch(err){
+    console.error(err);
+    setStatus(false, 'تعذّر حذف الحجز — تحقق من الاتصال وحاول مرة أخرى.');
+  }
+}
+
+function applyBookingsFromList(list){
+  bookings = {};
+  list.forEach(d=>{
+    if(!d || !d.week) return;
+    if(Number(d.week) !== currentWeek) return;
+    const id = d.id || slotKey(d.week, d.lab, d.day, d.period);
+    bookings[id] = {
+      id,
+      teacher: d.teacher || '',
+      experiment: d.experiment || '',
+      completed: d.completed === true || d.completed === 'TRUE' || d.completed === 'true'
+    };
+  });
+  renderTable();
+}
+
+async function refreshBookings(){
+  if(!apiReady) return;
+  try{
+    const data = await apiList();
+    lastFetchedList = data;
+    applyBookingsFromList(data);
+    setStatus(true);
+  }catch(err){
+    console.error(err);
+    setStatus(false, 'تعذّر الاتصال بجوجل شيت — سيُعاد المحاولة تلقائيًا');
+  }
+}
+
+function startPolling(){
+  stopPolling();
+  refreshBookings();
+  pollTimer = setInterval(refreshBookings, POLL_MS);
+}
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+}
+
+function setStatus(ok, msg){
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'dot ' + (ok ? 'ok' : 'bad');
+  txt.textContent = msg || (ok ? 'متصل بجوجل شيت — يتحدّث تلقائيًا كل بضع ثوانٍ' : 'غير متصل');
+}
+
+function initWeekButtons(){
+  const prev = document.getElementById('weekPrev');
+  const next = document.getElementById('weekNext');
+  const label = document.getElementById('weekNum');
+  prev.onclick = ()=>{
+    currentWeek = Math.max(1, currentWeek - 1);
+    label.textContent = currentWeek;
+    applyBookingsFromList(lastFetchedList);
+    refreshBookings();
+  };
+  next.onclick = ()=>{
+    currentWeek = Math.min(30, currentWeek + 1);
+    label.textContent = currentWeek;
+    applyBookingsFromList(lastFetchedList);
+    refreshBookings();
+  };
+}
+initWeekButtons();
+
+document.getElementById('labTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-lab]');
+  if(!btn) return;
+  currentLab = btn.dataset.lab;
+  document.querySelectorAll('#labTabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+});
+
+function showExportMsg(text, ok){
+  const el = document.getElementById('exportMsg');
+  el.textContent = text;
+  el.className = 'export-msg ' + (ok ? 'ok' : 'err');
+  el.style.display = 'block';
+  if(ok){
+    setTimeout(()=>{ el.style.display = 'none'; }, 3500);
+  }
+}
+
+async function exportExcel(){
+  const btn = document.getElementById('exportBtn');
+  if(!apiReady){
+    showExportMsg('لم يتم ضبط رابط جوجل شيت بعد.', false);
+    return;
+  }
+  if(typeof XLSX === 'undefined'){
+    showExportMsg('تعذّر تحميل مكتبة Excel (تحقق من الاتصال بالإنترنت) وحاول مرة أخرى.', false);
+    return;
+  }
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = 'جارِ التجهيز…';
+  document.getElementById('exportMsg').style.display = 'none';
+  try{
+    const list = await apiList();
+    const dayOrder = {sun:1, mon:2, tue:3, wed:4, thu:5};
+    const dayLabelOf = (k)=> (DAYS.find(d=>d.key===k)||{}).label || k;
+    const rows = list.slice().sort((a,b)=>{
+      if(Number(a.week) !== Number(b.week)) return (Number(a.week)||0) - (Number(b.week)||0);
+      const la = LAB_LABELS[a.lab] || a.lab, lb = LAB_LABELS[b.lab] || b.lab;
+      if(la !== lb) return la < lb ? -1 : 1;
+      const da = dayOrder[a.day]||9, db_ = dayOrder[b.day]||9;
+      if(da !== db_) return da - db_;
+      return (Number(a.period)||0) - (Number(b.period)||0);
+    }).map(d=>({
+      "الأسبوع": d.week,
+      "المختبر": LAB_LABELS[d.lab] || d.lab,
+      "اليوم": dayLabelOf(d.day),
+      "الحصة": d.period,
+      "المعلم": d.teacher || "",
+      "اسم التجربة": d.experiment || "",
+      "الحالة": (d.completed === true || d.completed === 'TRUE' || d.completed === 'true') ? "تم إجراء التجربة" : "لم تُجرَ بعد"
+    }));
+
+    if(rows.length === 0){
+      showExportMsg('لا توجد حجوزات مسجّلة بعد لتصديرها.', false);
+      return;
+    }
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:8},{wch:16},{wch:12},{wch:8},{wch:20},{wch:28},{wch:18}];
+    const wb = XLSX.utils.book_new();
+    wb.Workbook = { Views: [{ RTL: true }] };
+    XLSX.utils.book_append_sheet(wb, ws, 'حجوزات المختبرات');
+    const out = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([out], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'جدول_حجز_المختبرات.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+
+    showExportMsg('تم تحميل الملف بنجاح ✓', true);
+  }catch(err){
+    console.error(err);
+    showExportMsg('تعذّر تجهيز ملف الإكسل — تحقق من الاتصال وحاول مرة أخرى.', false);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+document.getElementById('exportBtn').addEventListener('click', exportExcel);
+
+function init(){
+  renderTable();
+  if(!apiReady){
+    document.getElementById('setupBanner').style.display = 'block';
+    setStatus(false, 'الرابط غير مضبوط — افتح ملف الصفحة وعدّل سطر API_URL أعلى الكود');
+    return;
+  }
+  startPolling();
+}
+init();
+</script>
+</body>
+</html>
