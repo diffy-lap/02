@@ -869,7 +869,18 @@ async function exportExcel(){
 }
 document.getElementById('exportBtn').addEventListener('click', exportExcel);
 
+function computeCurrentWeek(){
+  const today = new Date();
+  const start = new Date(SEMESTER_START.getFullYear(), SEMESTER_START.getMonth(), SEMESTER_START.getDate());
+  const now = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const diffDays = Math.floor((now - start) / 86400000);
+  const w = Math.floor(diffDays / 7) + 1;
+  return Math.min(30, Math.max(1, w));
+}
+
 function init(){
+  currentWeek = computeCurrentWeek();
+  document.getElementById('weekNum').textContent = currentWeek;
   renderTable();
   if(!apiReady){
     document.getElementById('setupBanner').style.display = 'block';
