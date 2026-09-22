@@ -518,6 +518,7 @@ const LAB_LABELS = {chem:"مختبر الكيمياء", bio:"مختبر الأح
    ============================================================ */
 const API_URL = "https://script.google.com/macros/s/AKfycbyLtp87-yxvtylcQ40Nf-UPuG12-gGB_yNLWGqWRGaw1bQPHt2bZzitmIpgVTHXtjtpPw/exec";
 const POLL_MS = 4000; // كم مرة تتحدّث الصفحة (بالمللي ثانية)
+const SEMESTER_START = new Date(2026, 7, 23); // 23 أغسطس 2026 — أحد الأسبوع الأول
 
 let currentWeek = 1;
 let currentLab = "chem";
@@ -807,7 +808,16 @@ async function exportExcel(){
   try{
     const list = await apiList();
     const dayOrder = {sun:1, mon:2, tue:3, wed:4, thu:5};
+    const dayOffset = {sun:0, mon:1, tue:2, wed:3, thu:4};
     const dayLabelOf = (k)=> (DAYS.find(d=>d.key===k)||{}).label || k;
+    const pad2 = (n)=> String(n).padStart(2,'0');
+    const dateOf = (week, dayKey)=>{
+      const w = Number(week) || 1;
+      const off = dayOffset[dayKey] ?? 0;
+      const d = new Date(SEMESTER_START.getTime());
+      d.setDate(d.getDate() + (w - 1) * 7 + off);
+      return `${d.getFullYear()}/${pad2(d.getMonth()+1)}/${pad2(d.getDate())}`;
+    };
     const rows = list.slice().sort((a,b)=>{
       if(Number(a.week) !== Number(b.week)) return (Number(a.week)||0) - (Number(b.week)||0);
       const la = LAB_LABELS[a.lab] || a.lab, lb = LAB_LABELS[b.lab] || b.lab;
@@ -817,6 +827,7 @@ async function exportExcel(){
       return (Number(a.period)||0) - (Number(b.period)||0);
     }).map(d=>({
       "الأسبوع": d.week,
+      "التاريخ": dateOf(d.week, d.day),
       "المختبر": LAB_LABELS[d.lab] || d.lab,
       "اليوم": dayLabelOf(d.day),
       "الحصة": d.period,
@@ -831,7 +842,7 @@ async function exportExcel(){
     }
 
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{wch:8},{wch:16},{wch:12},{wch:8},{wch:20},{wch:28},{wch:18}];
+    ws['!cols'] = [{wch:8},{wch:12},{wch:16},{wch:12},{wch:8},{wch:20},{wch:28},{wch:18}];
     const wb = XLSX.utils.book_new();
     wb.Workbook = { Views: [{ RTL: true }] };
     XLSX.utils.book_append_sheet(wb, ws, 'حجوزات المختبرات');
