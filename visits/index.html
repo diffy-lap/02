@@ -43,6 +43,9 @@ header p{margin:0;color:var(--muted)}
   border-radius:8px;padding:5px 12px;cursor:pointer;flex:none;margin-top:6px}
 .session{margin-top:14px;padding:8px 14px;border-radius:10px;background:var(--royal-soft);font-size:.9rem;
   display:flex;justify-content:space-between;align-items:center;gap:10px}
+.session{flex-wrap:wrap}
+.session>span:first-child{flex:1 1 260px}
+.session .sbtns{display:flex;gap:14px;margin-inline-start:auto}
 .session button{font:inherit;font-size:.85rem;background:none;border:0;color:var(--royal);cursor:pointer;font-weight:600}
 .tabs{display:flex;gap:4px;margin:22px 0 20px;border-bottom:2px solid var(--line)}
 .tab{background:none;border:0;font:inherit;color:var(--muted);padding:10px 14px;cursor:pointer;
@@ -258,6 +261,20 @@ footer .mail:focus-visible{outline:3px solid var(--royal);outline-offset:2px}
   </div>
 </dialog>
 
+<dialog id="pin-dlg">
+  <h2>تغيير الرقم السري</h2>
+  <label for="pin-old">الرقم السري الحالي</label>
+  <input id="pin-old" type="password" inputmode="numeric" autocomplete="off">
+  <label for="pin-new">الرقم السري الجديد <small>(من 4 إلى 10 أرقام)</small></label>
+  <input id="pin-new" type="password" inputmode="numeric" autocomplete="off">
+  <label for="pin-new2">تأكيد الرقم السري الجديد</label>
+  <input id="pin-new2" type="password" inputmode="numeric" autocomplete="off">
+  <div class="row">
+    <button class="primary" id="do-pin">حفظ</button>
+    <button class="cancel-btn" id="close-pin">إلغاء</button>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -326,6 +343,11 @@ function demoApi(method, body){
   if (method==="GET") return {ok:true,bookings:data};
   const acc = DEMO_PINS[body.user];
   const authed = acc && acc[0]===body.pin ? {name:body.user, role:acc[1]} : null;
+  if (body.action==="changePin"){
+    if (!authed) return {ok:false,error:"الرقم السري الحالي غير صحيح"};
+    if (!/^\d{4,10}$/.test(body.newPin||"")) return {ok:false,error:"يجب أن يتكون الرقم السري الجديد من 4 إلى 10 أرقام"};
+    DEMO_PINS[body.user][0] = body.newPin; return {ok:true};
+  }
   if (body.action==="login") return authed ? {ok:true,...authed} : {ok:false,error:"الاسم أو الرقم السري غير صحيح"};
   if (body.action==="book"){
     const spec = SPECS.find(s=>s.name===body.spec);
@@ -365,7 +387,7 @@ function renderSession(){
       deputy: "يمكنك التأشير على زيارات معلميك وحذفها، ومتابعة من لم يحجز منهم",
       principal: "يمكنك متابعة الزيارات والمعلمين الذين لم يحجزوا"
     }[session.role] || "";
-    $("session").innerHTML = `<span>${session.role==="admin" ? "مرحبًا" : "مرحبًا أ. "+esc(session.name)} — ${what}.</span><button id="logout">خروج</button>`;
+    $("session").innerHTML = `<span>${session.role==="admin" ? "مرحبًا" : "مرحبًا أ. "+esc(session.name)} — ${what}.</span><span class="sbtns"><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
   }
 }
 function currentSpec(){ return SPECS.find(s=>s.name===state.spec); }
@@ -538,6 +560,25 @@ document.addEventListener("click", async e=>{
       } else toast(r.error, true);
     } catch(err){ toast("تعذّر الدخول. حاول مرة أخرى", true); }
     t.disabled=false; renderAll();
+  } else if (t.id==="open-pin"){
+    ["pin-old","pin-new","pin-new2"].forEach(i=>$(i).value="");
+    $("pin-dlg").showModal();
+  } else if (t.id==="close-pin"){
+    $("pin-dlg").close();
+  } else if (t.id==="do-pin"){
+    const oldPin=$("pin-old").value.trim(), newPin=$("pin-new").value.trim(), newPin2=$("pin-new2").value.trim();
+    if (!/^\d{4,10}$/.test(newPin)){ toast("يجب أن يتكون الرقم السري الجديد من 4 إلى 10 أرقام", true); return; }
+    if (newPin!==newPin2){ toast("الرقمان الجديدان غير متطابقين", true); return; }
+    t.disabled=true;
+    try{
+      const r = await api("POST",{action:"changePin",user:session.name,pin:oldPin,newPin});
+      if (r.ok){
+        session.pin = newPin;
+        try { sessionStorage.setItem("visits-session", JSON.stringify(session)); } catch(e){}
+        $("pin-dlg").close(); toast("تم تغيير الرقم السري");
+      } else toast(r.error, true);
+    } catch(err){ toast("تعذّر تغيير الرقم السري. حاول مرة أخرى", true); }
+    t.disabled=false;
   } else if (t.id==="logout"){
     session=null; try { sessionStorage.removeItem("visits-session"); } catch(e){}
     toast("تم الخروج"); renderAll();
