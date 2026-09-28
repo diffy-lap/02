@@ -73,6 +73,7 @@ button{font:inherit}
 .type.book,.t-book{--c:var(--book);--c-soft:var(--book-soft)}
 .t-visit{--c:var(--res);--c-soft:var(--res-soft)}
 .type svg{width:34px;height:34px;color:var(--c)}
+.type .tx{display:flex;flex-direction:column;gap:2px}
 .type b{font-size:1rem}
 .type span{font-size:.84rem;color:var(--muted);line-height:1.45}
 .type:hover{border-color:var(--c)}
@@ -159,7 +160,6 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
   .types{grid-template-columns:1fr}
   .type{flex-direction:row;align-items:center}
   .type svg{flex:none}
-  .type .tx{display:flex;flex-direction:column}
   .fields{grid-template-columns:1fr}
   .day{grid-template-columns:1fr}
   .dname{border-inline-end:0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline;padding:8px 12px}
@@ -276,7 +276,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 
 <script>
 /* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
-const API_URL = "https://script.google.com/macros/s/AKfycbwCwg8wVQ4UK4iZu0lPaZ5RdURsgLWr_mw4WFSgKF51OFBtl59BF5NqTCxrPJBDz60jXg/exec";
+const API_URL = "";
 
 const SPECS = [
   { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
