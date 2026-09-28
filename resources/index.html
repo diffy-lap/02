@@ -240,7 +240,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
   <div id="view-all" class="hidden">
     <div class="weeks" id="weeks-all"></div>
     <div class="agenda" id="agenda"></div>
-    <h3 class="sec">طلبات توريد الكتب <span class="count" id="books-count"></span></h3>
+    <h3 class="sec" id="books-head">طلبات توريد الكتب <span class="count" id="books-count"></span></h3>
     <div class="books" id="books"></div>
   </div>
 </main>
@@ -276,7 +276,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 
 <script>
 /* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbwCwg8wVQ4UK4iZu0lPaZ5RdURsgLWr_mw4WFSgKF51OFBtl59BF5NqTCxrPJBDz60jXg/exec";
 
 const SPECS = [
   { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
@@ -353,9 +353,10 @@ function demoApi(method, body){
   let db = { bookings:[], books:[] };
   try { db = JSON.parse(localStorage.getItem("res-demo")) || db; } catch(e){}
   const save = () => { try { localStorage.setItem("res-demo", JSON.stringify(db)); } catch(e){} };
-  const out = extra => ({ ok:true, bookings:db.bookings, books:db.books, ...extra });
-  if (method==="GET") return out();
+  if (method==="GET") return { ok:true, bookings:db.bookings };
   const acc = DEMO_ACC[body.user], authed = acc && acc[0]===body.pin ? { name:body.user, role:acc[1] } : null;
+  const out = extra => ({ ok:true, bookings:db.bookings, ...(authed ? { books:db.books } : {}), ...extra });
+  if (body.action==="list") return authed ? out() : { ok:false, error:"انتهت الجلسة، سجّل الدخول من جديد" };
   const id = () => Math.random().toString(36).slice(2,10);
   if (body.action==="login") return authed ? { ok:true, ...authed } : { ok:false, error:"الرقم السري غير صحيح" };
   if (body.action==="changePin"){
@@ -382,7 +383,13 @@ function demoApi(method, body){
 }
 function take(r){ if (r.bookings) bookings = r.bookings; if (r.books) books = r.books; }
 async function load(){
-  try { const r = await api("GET"); if (r.ok) take(r); }
+  try {
+    const r = await api("GET"); if (r.ok) take(r);
+    if (session){
+      const l = await api("POST", { action:"list", user:session.name, pin:session.pin });
+      if (l.ok) take(l); else { books = []; toast(l.error, true); }
+    } else books = [];
+  }
   catch(e){ toast("تعذّر تحميل البيانات. تأكد من الاتصال ثم حدّث الصفحة", true); }
   renderAll();
 }
@@ -475,6 +482,9 @@ function renderAgenda(){
         <div>${b.done && !canMark()?`<span class="done">تم التنفيذ</span>`:""}${actions("booking", b, "تم التنفيذ")}</div>
       </div>`).join("")}</div>`;
   }).join("");
+  const staff = !!session;
+  $("books-head").classList.toggle("hidden", !staff);
+  $("books").classList.toggle("hidden", !staff);
   const pending = books.filter(b=>!b.done).length;
   $("books-count").textContent = books.length ? `${pending} قيد الانتظار من ${books.length}` : "";
   $("books").innerHTML = books.length ? [...books].reverse().map(b=>`
@@ -569,7 +579,7 @@ document.addEventListener("click", async e=>{
     } catch(err){ toast("تعذّر تغيير الرقم السري", true); }
     t.disabled=false;
   } else if (t.id==="logout"){
-    session=null; try { sessionStorage.removeItem("res-session"); } catch(e){}
+    session=null; books=[]; try { sessionStorage.removeItem("res-session"); } catch(e){}
     toast("تم الخروج"); renderAll();
   }
 });
