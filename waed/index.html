@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>بوابة واعد الدفي</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='23' rx='6' fill='%2316213A'/%3E%3Crect x='9' y='2' width='3' height='8' rx='1.5' fill='%23C98A1F'/%3E%3Crect x='20' y='2' width='3' height='8' rx='1.5' fill='%23C98A1F'/%3E%3Cpath d='M10 18l4 4 8-8' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16213A; --muted:#5E6780; --paper:#F2F4F8; --card:#FFFFFF; --line:#DDE2EC;
+  --gold:#C98A1F; --gold-soft:#FBF0DC;
+  --lab:#0D7A5F; --lab-soft:#E2F3EE;
+  --visit:#6A3FD6; --visit-soft:#EEE8FC;
+  --res:#B5523A; --res-soft:#F9E8E3;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
+    --gold:#E8B55A; --gold-soft:#33291A;
+    --lab:#38B58A; --lab-soft:#15302A; --visit:#A88BFF; --visit-soft:#2A2150; --res:#EE8B72; --res-soft:#3A221C;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
+  --gold:#E8B55A; --gold-soft:#33291A;
+  --lab:#38B58A; --lab-soft:#15302A; --visit:#A88BFF; --visit-soft:#2A2150; --res:#EE8B72; --res-soft:#3A221C;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%}
+body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);
+  font-family:"Tajawal","IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;font-size:17px;line-height:1.6;
+  display:flex;flex-direction:column}
+main{flex:1;width:100%;max-width:640px;margin:0 auto;padding:40px 20px 32px}
+
+/* الهوية */
+.brand{display:flex;align-items:center;gap:18px;margin-bottom:10px}
+.mark{width:84px;height:84px;flex:none}
+.mark .body{fill:var(--ink)}
+.mark .ring{fill:var(--gold)}
+.mark .tick{stroke:var(--paper)}
+.word h1{margin:0;font-weight:900;font-size:3.4rem;line-height:1;letter-spacing:0}
+.word p{margin:6px 0 0;color:var(--muted);font-weight:500;font-size:1.05rem}
+.lead{margin:22px 0 30px;color:var(--muted);max-width:34em}
+
+/* الخدمات */
+.services{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.svc{--c:var(--lab);--c-soft:var(--lab-soft)}
+.svc.visit{--c:var(--visit);--c-soft:var(--visit-soft)}
+.svc.res{--c:var(--res);--c-soft:var(--res-soft)}
+.svc a,.svc .soon{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:16px;
+  padding:16px 18px;border-radius:16px;background:var(--card);border:1.5px solid var(--line);
+  color:inherit;text-decoration:none}
+.svc a{transition:border-color .15s,transform .15s}
+.svc a:hover{border-color:var(--c)}
+.svc a:active{transform:scale(.99)}
+.svc a:focus-visible{outline:3px solid var(--c);outline-offset:3px}
+.ico{width:64px;height:64px;border-radius:14px;background:var(--c-soft);display:grid;place-items:center}
+.ico svg{width:44px;height:44px;color:var(--c)}
+.svc h2{margin:0;font-size:1.2rem;font-weight:700}
+.svc p{margin:2px 0 0;color:var(--muted);font-size:.93rem;line-height:1.5}
+.go{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--c);border:1.5px solid var(--line)}
+.svc a:hover .go{background:var(--c);border-color:var(--c);color:#fff}
+.soon{opacity:.72;border-style:dashed !important}
+.tag{font-size:.8rem;font-weight:700;color:var(--c);background:var(--c-soft);border-radius:999px;padding:2px 10px;white-space:nowrap}
+
+footer{max-width:640px;width:100%;margin:0 auto;padding:18px 18px 28px;border-top:1px solid var(--line);
+  display:flex;justify-content:center;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;
+  font-family:"Segoe UI",Tahoma,Arial,sans-serif;letter-spacing:.02em}
+footer .mail{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--gold);border:1.5px solid var(--line)}
+footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
+footer .mail:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+@media (max-width:480px){
+  main{padding-top:28px}
+  .mark{width:66px;height:66px}
+  .word h1{font-size:2.7rem}
+  .svc a,.svc .soon{grid-template-columns:54px 1fr auto;gap:12px;padding:14px}
+  .ico{width:54px;height:54px;border-radius:12px}
+  .ico svg{width:38px;height:38px}
+}
+@media (prefers-reduced-motion:reduce){.svc a{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <header class="brand">
+    <svg class="mark" viewBox="0 0 84 84" aria-hidden="true">
+      <rect class="body" x="6" y="14" width="72" height="64" rx="18"/>
+      <rect class="ring" x="22" y="4" width="9" height="22" rx="4.5"/>
+      <rect class="ring" x="53" y="4" width="9" height="22" rx="4.5"/>
+      <path class="tick" d="M26 48l11 11 22-22" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="word">
+      <h1>واعد</h1>
+      <p>بوابة حجوزات ثانوية الدفي</p>
+    </div>
+  </header>
+  <p class="lead">اختر الخدمة التي تحتاجها، وتنتقل مباشرة إلى صفحة الحجز.</p>
+
+  <ul class="services" id="services"></ul>
+</main>
+
+<footer dir="ltr">
+  <span>Designed &amp; developed by Mulhim Almulhim</span>
+  <a class="mail" href="mailto:mulhimm@rcjy.edu.sa" title="mulhimm@rcjy.edu.sa" aria-label="راسلني على البريد الرسمي">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</footer>
+
+<script>
+/* كل الأيقونات مبنية على ورقة التقويم نفسها (شعار واعد)، وداخلها رمز الخدمة */
+const FRAME = `<rect x="5" y="9" width="38" height="35" rx="9" fill="none" stroke="currentColor" stroke-width="3"/>
+  <rect x="13" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/><rect x="30.5" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/>`;
+const ICONS = {
+  // دورق
+  lab: `<path d="M20.5 19v7.5l-6.5 10a2.4 2.4 0 0 0 2 3.7h16a2.4 2.4 0 0 0 2-3.7l-6.5-10V19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M18.5 19h11" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M16.8 34h14.4l1.3 2.2H15.5z" fill="currentColor"/>`,
+  // عين (زيارة ملاحظة صفية)
+  visit: `<path d="M11 30.5c3.2-5.4 7.6-8.2 13-8.2s9.8 2.8 13 8.2c-3.2 5.4-7.6 8.2-13 8.2s-9.8-2.8-13-8.2z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="24" cy="30.5" r="4.2" fill="currentColor"/>`,
+  // كتاب مفتوح
+  res: `<path d="M24 24.5c-3.4-2.2-7.4-3-11.5-2.6v15.4c4.1-.4 8.1.4 11.5 2.6 3.4-2.2 7.4-3 11.5-2.6V21.9c-4.1-.4-8.1.4-11.5 2.6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M24 24.5v15" stroke="currentColor" stroke-width="3"/>`
+};
+
+/* لإضافة رابط جديد مستقبلًا: أضف عنصرًا هنا. لو ما له رابط بعد اترك href فاضي ويظهر "قريبًا" */
+const SERVICES = [
+  { key:"lab",   title:"حجز المختبرات",     desc:"احجز حصة في مختبر الكيمياء أو الأحياء أو الفيزياء.",  href:"../" },
+  { key:"visit", title:"الزيارات الفنية",   desc:"احجز موعد زيارتك الصفية مع مدير المدرسة والوكيل.",   href:"../visits/" },
+  { key:"res",   title:"حجز مصادر التعلم",  desc:"احجز مركز مصادر التعلم لحصتك.",                        href:"" }
+];
+
+const arrow = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+document.getElementById("services").innerHTML = SERVICES.map(s=>{
+  const icon = `<span class="ico"><svg viewBox="0 0 48 48" aria-hidden="true">${FRAME}${ICONS[s.key]||""}</svg></span>`;
+  const text = `<span><h2>${s.title}</h2><p>${s.desc}</p></span>`;
+  return s.href
+    ? `<li class="svc ${s.key}"><a href="${s.href}">${icon}${text}<span class="go">${arrow}</span></a></li>`
+    : `<li class="svc ${s.key}"><div class="soon" aria-disabled="true">${icon}${text}<span class="tag">قريبًا</span></div></li>`;
+}).join("");
+</script>
+</body>
+</html>
