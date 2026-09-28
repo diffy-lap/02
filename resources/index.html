@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مصادر التعلم — بوابة واعد الدفي</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect x='5' y='9' width='38' height='35' rx='9' fill='%23B5523A'/%3E%3Crect x='13' y='4' width='4.5' height='10' rx='2.25' fill='%23C98A1F'/%3E%3Crect x='30.5' y='4' width='4.5' height='10' rx='2.25' fill='%23C98A1F'/%3E%3Cpath d='M24 24.5c-3.4-2.2-7.4-3-11.5-2.6v15.4c4.1-.4 8.1.4 11.5 2.6 3.4-2.2 7.4-3 11.5-2.6V21.9c-4.1-.4-8.1.4-11.5 2.6z' fill='none' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#16213A; --muted:#5E6780; --paper:#F2F4F8; --card:#FFFFFF; --line:#DDE2EC;
+  --gold:#C98A1F; --gold-soft:#FBF0DC;
+  --res:#B5523A; --res-soft:#F9E8E3;
+  --prog:#9A6A0E; --prog-soft:#FBF0DC;
+  --book:#3559B7; --book-soft:#E7EDFB;
+  --ok:#2F8F55; --ok-soft:#E3F4E9; --danger:#B42343; --off:#ECEEF3;
+  --c:var(--res); --c-soft:var(--res-soft);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
+    --gold:#E8B55A; --gold-soft:#33291A; --res:#EE8B72; --res-soft:#3A221C;
+    --prog:#E8B55A; --prog-soft:#33291A; --book:#86A4F5; --book-soft:#1D2848;
+    --ok:#5BC98A; --ok-soft:#163323; --danger:#F07A93; --off:#222A38;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
+  --gold:#E8B55A; --gold-soft:#33291A; --res:#EE8B72; --res-soft:#3A221C;
+  --prog:#E8B55A; --prog-soft:#33291A; --book:#86A4F5; --book-soft:#1D2848;
+  --ok:#5BC98A; --ok-soft:#163323; --danger:#F07A93; --off:#222A38;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Tajawal","IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;font-size:17px;line-height:1.6}
+main{max-width:760px;margin:0 auto;padding:26px 18px 90px}
+.hidden{display:none !important}
+button{font:inherit}
+
+/* الرأس */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{width:52px;height:52px;flex:none;color:var(--res)}
+.brand h1{margin:0;font-size:1.7rem;font-weight:900;line-height:1.15}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.brand a{color:inherit;text-decoration:none}
+.brand a:hover{color:var(--res)}
+.ghost{background:var(--card);border:1.5px solid var(--line);color:var(--muted);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:.88rem;white-space:nowrap}
+.ghost:hover{border-color:var(--res);color:var(--res)}
+.session{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;background:var(--res-soft);border-radius:12px;
+  padding:10px 14px;margin:12px 0;font-size:.92rem}
+.session .sbtns{display:flex;gap:10px}
+.session button{background:none;border:0;color:var(--res);font-weight:700;cursor:pointer;padding:0}
+
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line);margin:16px 0 22px}
+.tab{background:none;border:0;color:var(--muted);padding:10px 14px;cursor:pointer;font-weight:700;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab[aria-selected="true"]{color:var(--res);border-bottom-color:var(--res)}
+.tab:focus-visible,.ghost:focus-visible{outline:3px solid var(--res);outline-offset:2px}
+
+/* الخطوات */
+.step{margin-bottom:26px}
+.step h2{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:1.12rem}
+.n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:.9rem;flex:none}
+.types{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.type{--c:var(--res);--c-soft:var(--res-soft);display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:start;
+  border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:14px;cursor:pointer}
+.type.program,.t-program{--c:var(--prog);--c-soft:var(--prog-soft)}
+.type.book,.t-book{--c:var(--book);--c-soft:var(--book-soft)}
+.t-visit{--c:var(--res);--c-soft:var(--res-soft)}
+.type svg{width:34px;height:34px;color:var(--c)}
+.type b{font-size:1rem}
+.type span{font-size:.84rem;color:var(--muted);line-height:1.45}
+.type:hover{border-color:var(--c)}
+.type[aria-pressed="true"]{border-color:var(--c);background:var(--c-soft);box-shadow:inset 0 0 0 1px var(--c)}
+.type:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+
+label.f{display:block;font-weight:700;font-size:.92rem;margin:0 0 6px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fields .full{grid-column:1/-1}
+select,input{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+select:focus,input:focus{outline:none;border-color:var(--res);box-shadow:0 0 0 3px var(--res-soft)}
+
+.weeks{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:thin}
+.week{flex:none;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.week small{color:var(--muted)}
+.week[aria-pressed="true"]{border-color:var(--res);color:var(--res);font-weight:700;box-shadow:inset 0 0 0 1px var(--res)}
+.board{border:1.5px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.day{display:grid;grid-template-columns:118px 1fr;min-height:62px}
+.day+.day{border-top:1px solid var(--line)}
+.dname{padding:10px 12px;border-inline-end:1px solid var(--line)}
+.dname b{display:block}
+.dname span{font-size:.8rem;color:var(--muted)}
+.slots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px;align-content:center}
+.slot{border:1.5px solid var(--res);background:var(--res-soft);color:var(--res);border-radius:9px;padding:8px 2px;cursor:pointer;font-weight:700;font-size:.88rem}
+.slot:hover:not(:disabled){background:var(--res);color:#fff}
+.slot[aria-pressed="true"]{background:var(--res);color:#fff}
+.slot:disabled{border-style:dashed;border-color:var(--line);background:var(--off);color:var(--muted);cursor:not-allowed;font-weight:500}
+.slot:focus-visible{outline:3px solid var(--res);outline-offset:2px}
+.full-day,.holiday{display:flex;align-items:center;padding:10px 14px;color:var(--muted);font-size:.92rem}
+.holiday{background:var(--off)}
+.left{grid-column:1/-1;font-size:.8rem;color:var(--muted)}
+.note{color:var(--muted);font-size:.86rem;margin:10px 0 0}
+
+.primary{display:block;width:100%;margin-top:14px;border:0;border-radius:12px;background:var(--res);color:#fff;font-weight:700;padding:13px;cursor:pointer;font-size:1.02rem}
+.primary:disabled{opacity:.6;cursor:wait}
+.primary:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.summary{background:var(--res-soft);border-radius:12px;padding:10px 14px;margin-top:14px;font-size:.93rem}
+
+/* الجدول والطلبات */
+.agenda{display:grid;gap:10px}
+.aday{background:var(--card);border:1.5px solid var(--line);border-radius:14px;overflow:hidden}
+.aday header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.aday header span{font-size:.82rem;color:var(--muted)}
+.aday .empty{padding:10px 14px;color:var(--muted);font-size:.9rem}
+.item{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;padding:12px 14px;border-inline-start:4px solid var(--c)}
+.item+.item{border-top:1px solid var(--line)}
+.pnum{grid-row:span 3;align-self:start;background:var(--c-soft);color:var(--c);border-radius:9px;padding:4px 10px;font-weight:700;font-size:.85rem;white-space:nowrap}
+.item b{font-size:1rem}
+.item .l{font-size:.86rem;color:var(--muted)}
+.tag{display:inline-block;font-size:.76rem;font-weight:700;color:var(--c);background:var(--c-soft);border-radius:999px;padding:1px 9px;margin-inline-start:6px;vertical-align:1px}
+.done{display:inline-block;font-size:.8rem;font-weight:700;color:var(--ok);background:var(--ok-soft);border-radius:999px;padding:2px 10px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.act{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:4px 12px;cursor:pointer;font-size:.85rem;font-weight:700}
+.act.mark{border-color:var(--ok);color:var(--ok)}
+.act.mark[aria-pressed="true"]{background:var(--ok);color:#fff}
+.act.del{border-color:var(--danger);color:var(--danger)}
+.act:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+h3.sec{margin:30px 0 12px;font-size:1.1rem;display:flex;align-items:center;gap:8px}
+h3.sec .count{font-size:.8rem;color:var(--muted);font-weight:500}
+.books{display:grid;gap:10px}
+.books .item{background:var(--card);border:1.5px solid var(--line);border-inline-start:4px solid var(--book);border-radius:12px;--c:var(--book);--c-soft:var(--book-soft)}
+.books .item .pnum{grid-row:span 2}
+
+dialog{border:0;border-radius:16px;padding:22px;max-width:360px;width:calc(100% - 32px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(16,21,31,.5)}
+dialog h2{margin:0 0 14px;font-size:1.15rem}
+dialog label.f{margin-top:10px}
+dialog .row{display:flex;gap:8px;margin-top:16px}
+dialog .row .primary{margin-top:0}
+dialog .row .ghost{padding:10px 16px}
+
+.toast{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:480px;margin:0 auto;
+  background:var(--ink);color:var(--paper);border-radius:12px;padding:12px 16px;text-align:center;font-weight:700;
+  opacity:0;transform:translateY(12px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:10}
+.toast.show{opacity:1;transform:none}
+.toast.err{background:var(--danger);color:#fff}
+
+footer{max-width:760px;margin:0 auto;padding:18px 18px 28px;border-top:1px solid var(--line);display:flex;justify-content:center;align-items:center;gap:10px;
+  color:var(--muted);font-size:.85rem;font-family:"Segoe UI",Tahoma,Arial,sans-serif;letter-spacing:.02em}
+footer .mail{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--gold);border:1.5px solid var(--line)}
+footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
+
+@media (max-width:560px){
+  .types{grid-template-columns:1fr}
+  .type{flex-direction:row;align-items:center}
+  .type svg{flex:none}
+  .type .tx{display:flex;flex-direction:column}
+  .fields{grid-template-columns:1fr}
+  .day{grid-template-columns:1fr}
+  .dname{border-inline-end:0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline;padding:8px 12px}
+  .dname b{display:inline}
+  .slot{font-size:.8rem;padding:8px 0}
+  .brand h1{font-size:1.45rem}
+  .brand svg{width:44px;height:44px}
+}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div class="brand">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="5" y="9" width="38" height="35" rx="9" fill="none" stroke="currentColor" stroke-width="3"/>
+        <rect x="13" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/><rect x="30.5" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/>
+        <path d="M24 24.5c-3.4-2.2-7.4-3-11.5-2.6v15.4c4.1-.4 8.1.4 11.5 2.6 3.4-2.2 7.4-3 11.5-2.6V21.9c-4.1-.4-8.1.4-11.5 2.6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M24 24.5v15" stroke="currentColor" stroke-width="3"/>
+      </svg>
+      <div>
+        <h1>مصادر التعلم</h1>
+        <p><a href="../waed/">بوابة واعد الدفي</a> — ثانوية الدفي</p>
+      </div>
+    </div>
+    <button class="ghost" id="open-login">دخول المشرفين</button>
+  </div>
+  <div class="session hidden" id="session"></div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-view="new">طلب جديد</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="all">الجدول والطلبات</button>
+  </div>
+
+  <div id="view-new">
+    <section class="step">
+      <h2><span class="n">١</span>نوع الطلب</h2>
+      <div class="types" id="types"></div>
+    </section>
+
+    <section class="step hidden" id="step-name">
+      <h2><span class="n">٢</span>اسمك</h2>
+      <select id="teacher" aria-label="اسمك"></select>
+    </section>
+
+    <section class="step hidden" id="step-details">
+      <h2><span class="n">٣</span>التفاصيل</h2>
+      <div class="fields" id="f-visit">
+        <div><label class="f" for="grade">الصف</label>
+          <select id="grade"><option value="">اختر الصف</option><option>أول ثانوي</option><option>ثاني ثانوي</option><option>ثالث ثانوي</option></select></div>
+        <div><label class="f" for="section">الشعبة</label>
+          <select id="section" disabled><option value="">اختر الصف أولًا</option></select></div>
+      </div>
+      <div class="fields" id="f-program">
+        <div class="full"><label class="f" for="program">اسم البرنامج أو النشاط</label><input id="program" maxlength="120" autocomplete="off"></div>
+        <div class="full"><label class="f" for="klass">الصف</label><input id="klass" maxlength="60" placeholder="مثال: ثاني ثانوي 3" autocomplete="off"></div>
+      </div>
+      <div class="fields" id="f-book">
+        <div class="full"><label class="f" for="title">اسم الكتاب</label><input id="title" maxlength="150" autocomplete="off"></div>
+        <div class="full"><label class="f" for="author">اسم المؤلف</label><input id="author" maxlength="100" autocomplete="off"></div>
+      </div>
+    </section>
+
+    <section class="step hidden" id="step-slot">
+      <h2><span class="n">٤</span>الموعد</h2>
+      <div class="weeks" id="weeks"></div>
+      <div class="board" id="board"></div>
+      <p class="note">المركز متاح من الحصة الأولى إلى الخامسة، وبحد أقصى حصتين في اليوم.</p>
+    </section>
+
+    <section class="step hidden" id="step-send">
+      <div class="summary" id="summary"></div>
+      <button class="primary" id="submit">إرسال الطلب</button>
+    </section>
+  </div>
+
+  <div id="view-all" class="hidden">
+    <div class="weeks" id="weeks-all"></div>
+    <div class="agenda" id="agenda"></div>
+    <h3 class="sec">طلبات توريد الكتب <span class="count" id="books-count"></span></h3>
+    <div class="books" id="books"></div>
+  </div>
+</main>
+
+<footer dir="ltr">
+  <span>Designed &amp; developed by Mulhim Almulhim</span>
+  <a class="mail" href="mailto:mulhimm@rcjy.edu.sa" title="mulhimm@rcjy.edu.sa" aria-label="راسلني على البريد الرسمي">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+</footer>
+
+<dialog id="login">
+  <h2>دخول المشرفين</h2>
+  <label class="f" for="login-user">الحساب</label>
+  <select id="login-user">
+    <option value="أمين مصادر التعلم">أمين مصادر التعلم</option>
+    <option value="أدمن">أدمن</option>
+  </select>
+  <label class="f" for="login-pin">الرقم السري</label>
+  <input id="login-pin" type="password" inputmode="numeric" autocomplete="current-password">
+  <div class="row"><button class="primary" id="do-login">دخول</button><button class="ghost" id="close-login">إلغاء</button></div>
+</dialog>
+
+<dialog id="pin-dlg">
+  <h2>تغيير الرقم السري</h2>
+  <label class="f" for="pin-old">الرقم الحالي</label><input id="pin-old" type="password" inputmode="numeric">
+  <label class="f" for="pin-new">الرقم الجديد</label><input id="pin-new" type="password" inputmode="numeric">
+  <label class="f" for="pin-new2">تأكيد الرقم الجديد</label><input id="pin-new2" type="password" inputmode="numeric">
+  <div class="row"><button class="primary" id="do-pin">حفظ</button><button class="ghost" id="close-pin">إلغاء</button></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
+const API_URL = "https://script.google.com/macros/s/AKfycbwCwg8wVQ4UK4iZu0lPaZ5RdURsgLWr_mw4WFSgKF51OFBtl59BF5NqTCxrPJBDz60jXg/exec";
+
+const SPECS = [
+  { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
+  { name:"أحياء", teachers:["نايف بن حبيب بوخمسين","سالم بن علي آل عمر","مازن بن أحمد سليماني","سعد بن عبدالرحمن الغامدي"] },
+  { name:"رياضيات", teachers:["عبدالكريم بن لافي الرشيدي","أحمد بن علي الزهراني","صالح بن عايض الحربي","سعد بن عيد الأحمري","عمر بن محمد الغامدي","علي بن حاظر الزهراني","عادل بن رزيق الصبحي"] },
+  { name:"حاسب آلي", teachers:["خالد بن عبدالله الشمراني","فيصل بن عبدالله الكلثم","علي بن بداح الدوسري"] },
+  { name:"اجتماعيات", teachers:["سعود بن خالد النفيعي","سلمان بن عايض العتيبي","عبدالله بن صالح الجديع"] },
+  { name:"تربية فنية", teachers:["أنور بن محمد آل حميد"] },
+  { name:"فيزياء", teachers:["هشام بن سعيد القحطاني","عبدالله عبدالهادي القحطاني","محمد بن سليمان العميم","الوليد بن مطلق البقمي"] },
+  { name:"لغة عربية", teachers:["عبدالله بن أسعد الفيفي","علي بن سفر الشهراني","خالد بن حسن دوشي","زهير بن إبراهيم الغامدي","عبدالرحمن بن حسن القراش","سلطان بن سليمان العتيبي","شامان بن هليل العنزي"] },
+  { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
+  { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
+  { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
+  { name:"النشاط والتوجيه", teachers:["رائد النشاط","الموجه الطلابي"] }
+];
+
+/* عدد الشعب لكل صف */
+const SECTIONS = { "أول ثانوي":11, "ثاني ثانوي":9, "ثالث ثانوي":8 };
+function fillSections(){
+  const n = SECTIONS[$("grade").value] || 0, sel = $("section");
+  sel.disabled = !n;
+  sel.innerHTML = n
+    ? `<option value="">اختر الشعبة</option>` + Array.from({length:n},(_,i)=>`<option>${i+1}</option>`).join("")
+    : `<option value="">اختر الصف أولًا</option>`;
+}
+
+const TYPES = {
+  visit:   { title:"زيارة صفية", desc:"زيارة المركز مع طلاب أحد الصفوف", icon:`<path d="M8 38c0-6 4.5-9 10-9s10 3 10 9M18 25a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM30 29c4.5 0 9 2.5 9 8M30.5 23.5a4.5 4.5 0 1 0 0-9" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>` },
+  program: { title:"نشاط أو برنامج", desc:"حجز المركز لتنفيذ نشاط أو برنامج", icon:`<path d="M24 7l4.6 10.4L40 18.6l-8.6 7.6 2.6 11.3L24 31.6l-10 5.9 2.6-11.3L8 18.6l11.4-1.2z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>` },
+  book:    { title:"طلب توريد كتاب", desc:"اقترح كتابًا ليُضاف إلى المركز", icon:`<path d="M24 14.5c-4-2.6-8.7-3.5-13.5-3v24c4.8-.5 9.5.4 13.5 3 4-2.6 8.7-3.5 13.5-3v-24c-4.8-.5-9.5.4-13.5 3z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M24 14.5v24" stroke="currentColor" stroke-width="3"/>` }
+};
+
+/* الأسابيع 6 إلى 17. إجازة الخريف (22–26 نوفمبر) ليست أسبوعًا دراسيًا */
+const FIRST_WEEK = 6, LAST_WEEK = 17, BREAK_AFTER = 13;
+const START_UTC = Date.UTC(2026, 8, 27); // الأحد 27 سبتمبر 2026 = الأسبوع 6
+const HOLIDAYS = ["2026-10-25"];
+const MAX_PER_DAY = 2;
+const DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
+const PERIOD_NAMES = ["الأولى","الثانية","الثالثة","الرابعة","الخامسة"];
+const weekStart = w => START_UTC + ((w-FIRST_WEEK) + (w>BREAK_AFTER?1:0)) * 7 * 86400000;
+const DAYS = [];
+for (let w=FIRST_WEEK; w<=LAST_WEEK; w++) for (let d=0; d<5; d++){
+  const dt = new Date(weekStart(w) + d*86400000), date = dt.toISOString().slice(0,10);
+  DAYS.push({ week:w, day:DAY_NAMES[d], date, dt, holiday:HOLIDAYS.includes(date) });
+}
+const fmtG = new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{day:"numeric",month:"long",timeZone:"UTC"});
+const fmtH = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",timeZone:"UTC"});
+function todayStr(){ const n=new Date(); return new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function defaultWeek(){
+  const t = todayStr();
+  for (let w=FIRST_WEEK; w<=LAST_WEEK; w++) if (t <= DAYS.filter(d=>d.week===w).at(-1).date) return w;
+  return LAST_WEEK;
+}
+function runningWeek(){ const d = DAYS.find(x=>x.date===todayStr()); return d ? d.week : null; }
+
+let bookings = [], books = [];
+let session = null;
+try { session = JSON.parse(sessionStorage.getItem("res-session")||"null"); } catch(e){}
+const state = { type:null, teacher:"", week:defaultWeek(), date:null, period:null, allWeek:defaultWeek() };
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const val = id => $(id).value.trim();
+
+/* الاتصال */
+async function api(method, body){
+  if (!API_URL) return demoApi(method, body);
+  const res = method==="GET"
+    ? await fetch(API_URL + "?t=" + Date.now())
+    : await fetch(API_URL, { method:"POST", body:JSON.stringify(body) });
+  return res.json();
+}
+const DEMO_ACC = { "أدمن":["1111","admin"], "أمين مصادر التعلم":["5555","librarian"] };
+function demoApi(method, body){
+  let db = { bookings:[], books:[] };
+  try { db = JSON.parse(localStorage.getItem("res-demo")) || db; } catch(e){}
+  const save = () => { try { localStorage.setItem("res-demo", JSON.stringify(db)); } catch(e){} };
+  const out = extra => ({ ok:true, bookings:db.bookings, books:db.books, ...extra });
+  if (method==="GET") return out();
+  const acc = DEMO_ACC[body.user], authed = acc && acc[0]===body.pin ? { name:body.user, role:acc[1] } : null;
+  const id = () => Math.random().toString(36).slice(2,10);
+  if (body.action==="login") return authed ? { ok:true, ...authed } : { ok:false, error:"الرقم السري غير صحيح" };
+  if (body.action==="changePin"){
+    if (!authed) return { ok:false, error:"الرقم السري الحالي غير صحيح" };
+    DEMO_ACC[body.user][0] = body.newPin; return { ok:true };
+  }
+  if (body.action==="book"){
+    const same = db.bookings.filter(b=>b.date===body.date);
+    if (same.length >= MAX_PER_DAY) return { ...out(), ok:false, error:"اكتمل حجز هذا اليوم (حصتان)" };
+    if (same.some(b=>+b.period===+body.period)) return { ...out(), ok:false, error:"هذه الحصة محجوزة" };
+    const d = DAYS.find(x=>x.date===body.date);
+    db.bookings.push({ id:id(), type:body.type, week:d.week, date:d.date, day:d.day, period:+body.period, teacher:body.teacher, grade:body.grade, program:body.program||"", done:false });
+  }
+  if (body.action==="request") db.books.push({ id:id(), teacher:body.teacher, title:body.title, author:body.author, created:todayStr(), done:false });
+  if (body.action==="mark" || body.action==="cancel"){
+    if (!authed) return { ...out(), ok:false, error:"سجّل الدخول من جديد" };
+    const list = body.kind==="book" ? db.books : db.bookings;
+    const it = list.find(x=>x.id===body.id);
+    if (!it) return { ...out(), ok:false, error:"الطلب غير موجود" };
+    if (body.action==="mark"){ if (authed.role!=="librarian") return { ...out(), ok:false, error:"التأشير لأمين مصادر التعلم" }; it.done = !!body.done; }
+    else list.splice(list.indexOf(it), 1);
+  }
+  save(); return out();
+}
+function take(r){ if (r.bookings) bookings = r.bookings; if (r.books) books = r.books; }
+async function load(){
+  try { const r = await api("GET"); if (r.ok) take(r); }
+  catch(e){ toast("تعذّر تحميل البيانات. تأكد من الاتصال ثم حدّث الصفحة", true); }
+  renderAll();
+}
+
+const canMark = () => session && session.role==="librarian";
+const canDelete = () => session && (session.role==="librarian" || session.role==="admin");
+
+/* العرض */
+function renderSession(){
+  $("open-login").classList.toggle("hidden", !!session);
+  $("session").classList.toggle("hidden", !session);
+  if (session){
+    const what = session.role==="librarian" ? "يمكنك التأشير على الطلبات المنفذة وحذفها" : "يمكنك حذف أي طلب";
+    $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. ${what}.</span><span class="sbtns"><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
+  }
+}
+function renderTypes(){
+  $("types").innerHTML = Object.entries(TYPES).map(([k,t])=>
+    `<button class="type ${k}" aria-pressed="${state.type===k}" data-type="${k}"><svg viewBox="0 0 48 48" aria-hidden="true">${t.icon}</svg><span class="tx"><b>${t.title}</b><span>${t.desc}</span></span></button>`).join("");
+}
+function fillTeachers(){
+  $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
+    `<optgroup label="${esc(s.name)}">${s.teachers.map(t=>`<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
+}
+function details(){
+  if (state.type==="visit"){ const g=val("grade"), s=val("section"); return g&&s ? { grade:`${g} ${s}` } : null; }
+  if (state.type==="program"){ const p=val("program"), k=val("klass"); return p&&k ? { program:p, grade:k } : null; }
+  if (state.type==="book"){ const t=val("title"), a=val("author"); return t&&a ? { title:t, author:a } : null; }
+  return null;
+}
+function renderNew(){
+  renderTypes();
+  const t = state.type;
+  $("step-name").classList.toggle("hidden", !t);
+  const hasName = t && state.teacher;
+  $("step-details").classList.toggle("hidden", !hasName);
+  ["visit","program","book"].forEach(k=>$("f-"+k).classList.toggle("hidden", k!==t));
+  const needSlot = hasName && t!=="book";
+  $("step-slot").classList.toggle("hidden", !needSlot);
+  if (needSlot){ renderWeeks("weeks", state.week); renderBoard(); }
+  const ready = hasName && (t==="book" || (state.date && state.period));
+  $("step-send").classList.toggle("hidden", !ready);
+  if (ready){
+    let s = `${TYPES[t].title} — ${state.teacher}`;
+    if (t!=="book"){ const d = DAYS.find(x=>x.date===state.date); s += ` — ${d.day} ${fmtG.format(d.dt)}، الحصة ${PERIOD_NAMES[state.period-1]}`; }
+    $("summary").textContent = s;
+  }
+}
+function renderWeeks(id, active){
+  const cur = runningWeek();
+  let h = "";
+  for (let w=FIRST_WEEK; w<=LAST_WEEK; w++) h += `<button class="week" aria-pressed="${w===active}" data-week="${w}">الأسبوع ${w}${w===cur?" <small>(الحالي)</small>":""}</button>`;
+  $(id).innerHTML = h;
+  const a = $(id).querySelector('[aria-pressed="true"]');
+  if (a) $(id).scrollLeft += a.getBoundingClientRect().left - $(id).getBoundingClientRect().left - 8;
+}
+const dayHead = d => `<div class="dname"><b>${d.day}</b><span>${fmtG.format(d.dt)} · ${fmtH.format(d.dt)}</span></div>`;
+function renderBoard(){
+  const t = todayStr();
+  $("board").innerHTML = DAYS.filter(d=>d.week===state.week).map(d=>{
+    if (d.holiday) return `<div class="day">${dayHead(d)}<div class="holiday">إجازة</div></div>`;
+    const taken = bookings.filter(b=>b.date===d.date);
+    if (taken.length >= MAX_PER_DAY) return `<div class="day">${dayHead(d)}<div class="full-day">اكتمل الحجز لهذا اليوم</div></div>`;
+    const past = d.date < t;
+    const slots = PERIOD_NAMES.map((p,i)=>{
+      const busy = taken.some(b=>+b.period===i+1);
+      return `<button class="slot" ${past||busy?"disabled":""} aria-pressed="${state.date===d.date&&state.period===i+1}" data-date="${d.date}" data-period="${i+1}" aria-label="${d.day} الحصة ${p}${busy?" محجوزة":""}">${p}</button>`;
+    }).join("");
+    const left = !past && taken.length===1 ? `<span class="left">متبقي حصة واحدة في هذا اليوم</span>` : "";
+    return `<div class="day">${dayHead(d)}<div class="slots">${slots}${left}</div></div>`;
+  }).join("");
+}
+function actions(kind, it, doneLabel){
+  const a = [];
+  if (canMark()) a.push(`<button class="act mark" aria-pressed="${it.done}" data-mark="${esc(it.id)}" data-kind="${kind}" data-done="${!it.done}">${it.done?"✓ "+doneLabel:doneLabel}</button>`);
+  if (canDelete()) a.push(`<button class="act del" data-del="${esc(it.id)}" data-kind="${kind}">حذف</button>`);
+  return a.length ? `<div class="acts">${a.join("")}</div>` : "";
+}
+function renderAgenda(){
+  renderWeeks("weeks-all", state.allWeek);
+  $("agenda").innerHTML = DAYS.filter(d=>d.week===state.allWeek).map(d=>{
+    const head = `<header><b>${d.day}</b><span>${fmtG.format(d.dt)} · ${fmtH.format(d.dt)}</span></header>`;
+    if (d.holiday) return `<div class="aday">${head}<div class="empty">إجازة</div></div>`;
+    const list = bookings.filter(b=>b.date===d.date).sort((a,b)=>a.period-b.period);
+    if (!list.length) return `<div class="aday">${head}<div class="empty">لا توجد حجوزات — متاح</div></div>`;
+    return `<div class="aday">${head}${list.map(b=>`
+      <div class="item t-${esc(b.type)}"><span class="pnum">الحصة ${PERIOD_NAMES[b.period-1]}</span>
+        <div><b>${esc(b.teacher)}</b><span class="tag">${esc(TYPES[b.type]?.title||"")}</span></div>
+        <div class="l">${b.program?`${esc(b.program)} — `:""}${esc(b.grade)}</div>
+        <div>${b.done && !canMark()?`<span class="done">تم التنفيذ</span>`:""}${actions("booking", b, "تم التنفيذ")}</div>
+      </div>`).join("")}</div>`;
+  }).join("");
+  const pending = books.filter(b=>!b.done).length;
+  $("books-count").textContent = books.length ? `${pending} قيد الانتظار من ${books.length}` : "";
+  $("books").innerHTML = books.length ? [...books].reverse().map(b=>`
+    <div class="item"><span class="pnum">كتاب</span>
+      <div><b>${esc(b.title)}</b> <span class="l">— ${esc(b.author)}</span></div>
+      <div class="l">طلبه: ${esc(b.teacher)}${b.done && !canMark()?` <span class="done">تم التوريد</span>`:""}${actions("book", b, "تم التوريد")}</div>
+    </div>`).join("") : `<p class="note">لا توجد طلبات حتى الآن.</p>`;
+}
+function renderAll(){ renderSession(); renderNew(); renderAgenda(); }
+
+let tt;
+function toast(msg, err){
+  const el=$("toast"); el.textContent=msg; el.classList.toggle("err",!!err); el.classList.add("show");
+  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove("show"),3500);
+}
+async function adminAction(body, okMsg){
+  try { const r = await api("POST", { ...body, user:session.name, pin:session.pin }); take(r); toast(r.ok ? okMsg : r.error, !r.ok); }
+  catch(e){ toast("تعذّر تنفيذ الطلب. حاول مرة أخرى", true); }
+  renderAll();
+}
+function resetForm(){
+  ["grade","section","program","klass","title","author"].forEach(i=>$(i).value="");
+  fillSections();
+  state.date = null; state.period = null;
+}
+
+/* الأحداث */
+document.addEventListener("click", async e=>{
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.view){
+    document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected", b===t));
+    $("view-new").classList.toggle("hidden", t.dataset.view!=="new");
+    $("view-all").classList.toggle("hidden", t.dataset.view!=="all");
+    load();
+  } else if (t.dataset.type){
+    if (state.type!==t.dataset.type){ state.type=t.dataset.type; state.date=null; state.period=null; }
+    renderNew();
+  } else if (t.dataset.week){
+    if (t.parentElement.id==="weeks-all"){ state.allWeek=+t.dataset.week; renderAgenda(); }
+    else { state.week=+t.dataset.week; renderNew(); }
+  } else if (t.dataset.period){
+    state.date=t.dataset.date; state.period=+t.dataset.period; renderNew();
+    $("submit").scrollIntoView({ behavior:"smooth", block:"center" });
+  } else if (t.id==="submit"){
+    const d = details();
+    if (!d){ toast("أكمل التفاصيل المطلوبة", true); $("step-details").scrollIntoView({ behavior:"smooth" }); return; }
+    t.disabled=true; t.textContent="جاري الإرسال…";
+    try{
+      const body = state.type==="book"
+        ? { action:"request", teacher:state.teacher, ...d }
+        : { action:"book", type:state.type, teacher:state.teacher, date:state.date, period:state.period, ...d };
+      const r = await api("POST", body);
+      take(r);
+      if (r.ok){ toast(state.type==="book" ? "تم إرسال طلب الكتاب" : "تم الحجز"); resetForm(); }
+      else { toast(r.error, true); state.date=null; state.period=null; }
+    } catch(err){ toast("تعذّر الإرسال. تأكد من الاتصال وحاول مرة أخرى", true); }
+    t.disabled=false; t.textContent="إرسال الطلب";
+    renderAll();
+  } else if (t.dataset.mark){
+    const done = t.dataset.done==="true";
+    adminAction({ action:"mark", kind:t.dataset.kind, id:t.dataset.mark, done }, done ? "تم التأشير" : "تم إلغاء التأشير");
+  } else if (t.dataset.del){
+    if (!confirm("هل تريد حذف هذا الطلب؟")) return;
+    adminAction({ action:"cancel", kind:t.dataset.kind, id:t.dataset.del }, "تم الحذف");
+  } else if (t.id==="open-login"){ $("login").showModal();
+  } else if (t.id==="close-login"){ $("login").close();
+  } else if (t.id==="do-login"){
+    const user=$("login-user").value, pin=$("login-pin").value.trim();
+    if (!pin){ toast("اكتب الرقم السري", true); return; }
+    t.disabled=true;
+    try{
+      const r = await api("POST",{ action:"login", user, pin });
+      if (r.ok){
+        session = { name:r.name, role:r.role, pin };
+        try { sessionStorage.setItem("res-session", JSON.stringify(session)); } catch(e){}
+        $("login-pin").value=""; $("login").close(); toast("تم الدخول");
+        document.querySelector('[data-view="all"]').click();
+      } else toast(r.error, true);
+    } catch(err){ toast("تعذّر الدخول. حاول مرة أخرى", true); }
+    t.disabled=false; renderAll();
+  } else if (t.id==="open-pin"){ ["pin-old","pin-new","pin-new2"].forEach(i=>$(i).value=""); $("pin-dlg").showModal();
+  } else if (t.id==="close-pin"){ $("pin-dlg").close();
+  } else if (t.id==="do-pin"){
+    const o=val("pin-old"), n=val("pin-new"), n2=val("pin-new2");
+    if (!/^\d{4,10}$/.test(n)){ toast("يجب أن يتكون الرقم السري الجديد من 4 إلى 10 أرقام", true); return; }
+    if (n!==n2){ toast("الرقمان الجديدان غير متطابقين", true); return; }
+    t.disabled=true;
+    try{
+      const r = await api("POST",{ action:"changePin", user:session.name, pin:o, newPin:n });
+      if (r.ok){ session.pin=n; try { sessionStorage.setItem("res-session", JSON.stringify(session)); } catch(e){} $("pin-dlg").close(); toast("تم تغيير الرقم السري"); }
+      else toast(r.error, true);
+    } catch(err){ toast("تعذّر تغيير الرقم السري", true); }
+    t.disabled=false;
+  } else if (t.id==="logout"){
+    session=null; try { sessionStorage.removeItem("res-session"); } catch(e){}
+    toast("تم الخروج"); renderAll();
+  }
+});
+$("teacher").addEventListener("change", e=>{ state.teacher=e.target.value; renderNew(); });
+$("grade").addEventListener("change", fillSections);
+
+fillTeachers();
+load();
+</script>
+</body>
+</html>
