@@ -420,6 +420,61 @@
     opacity:.85;
   }
   .footer-contact:hover{opacity:1;}
+  .top-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .auth-btn{
+    flex-shrink:0;
+    border:1.5px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text-dim);
+    border-radius:999px;
+    padding:7px 12px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:.75rem;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .auth-btn.on{
+    background:var(--done-tint);
+    border-color:var(--done);
+    color:var(--done);
+  }
+  .info-row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px solid var(--border);
+    font-size:.85rem;
+  }
+  .info-row:last-of-type{border-bottom:none;}
+  .info-row .k{color:var(--text-dim);font-weight:700;}
+  .info-row .v{font-weight:700;text-align:left;}
+  .lock-note{
+    background:var(--accent-tint);
+    border:1.5px solid var(--accent);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:.8rem;
+    font-weight:700;
+    line-height:1.7;
+    margin-top:12px;
+  }
+  .login-err{
+    display:none;
+    background:var(--danger-tint);
+    color:var(--danger);
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:.78rem;
+    font-weight:700;
+    margin-top:4px;
+  }
   .setup-banner{
     background:var(--warn-tint, #fdebd0);
     border:1.5px solid #b9770e;
@@ -452,8 +507,13 @@
   </div>
 
   <div class="top">
-    <h1>🧪 جدول حجز المختبرات</h1>
-    <p class="sub">ثانوية الدفي — مدارس الهيئة الملكية</p>
+    <div class="top-head">
+      <div>
+        <h1>🧪 جدول حجز المختبرات</h1>
+        <p class="sub">ثانوية الدفي — مدارس الهيئة الملكية</p>
+      </div>
+      <button class="auth-btn" id="authBtn">🔑 دخول المحضر</button>
+    </div>
 
     <div class="controls">
       <div class="week-box">
@@ -481,10 +541,10 @@
 
   <div class="legend">
     <span><i class="swatch empty"></i> غير محجوزة — اضغط للحجز</span>
-    <span><i class="swatch booked"></i> محجوزة — اضغط للتعديل أو الحذف</span>
+    <span><i class="swatch booked"></i> محجوزة — اضغط لعرض التفاصيل</span>
     <span>✓ تم — علّمها المحضر بعد إجراء التجربة</span>
   </div>
-  <p class="hint">أي حجز أو تعديل يظهر فورًا لجميع المعلمين.</p>
+  <p class="hint">أي حجز يظهر فورًا لجميع المعلمين. لإلغاء حجز أو تعديله راجع محضر المختبر.</p>
 
   <div class="footer">
     <span>Developed by Mulhim Almulhim</span>
@@ -514,6 +574,40 @@
     </div>
     <div class="modal-actions" id="deleteRow" style="display:none;">
       <button class="btn btn-danger" id="deleteBtn">إلغاء هذا الحجز</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="infoOverlay">
+  <div class="modal">
+    <h3>تفاصيل الحجز</h3>
+    <p class="meta" id="infoMeta"></p>
+    <div class="info-row"><span class="k">المعلم</span><span class="v" id="infoTeacher"></span></div>
+    <div class="info-row"><span class="k">التجربة</span><span class="v" id="infoExp"></span></div>
+    <div class="info-row"><span class="k">الحالة</span><span class="v" id="infoStatus"></span></div>
+    <div class="lock-note">🔒 لإلغاء هذا الحجز أو تعديله راجع محضر المختبر.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="infoClose">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <h3>دخول محضر المختبر</h3>
+    <p class="meta">بعد الدخول تقدر تعدّل الحجوزات وتحذفها وتأشّر على التجارب المنفّذة.</p>
+    <div class="field">
+      <label for="loginUser">اسم المستخدم</label>
+      <input type="text" id="loginUser" autocomplete="username" dir="ltr">
+    </div>
+    <div class="field">
+      <label for="loginPass">كلمة المرور</label>
+      <input type="password" id="loginPass" autocomplete="current-password" dir="ltr">
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="loginCancel">إلغاء</button>
+      <button class="btn btn-primary" id="loginSubmit">دخول</button>
     </div>
   </div>
 </div>
@@ -552,6 +646,26 @@ let pollTimer = null;
 let lastFetchedList = [];
 let apiReady = API_URL && API_URL.indexOf("PASTE_YOUR") === -1;
 
+/* ---- دخول المحضر ---- */
+const AUTH_KEY = 'labTechAuth';
+let auth = null;
+try{ auth = JSON.parse(sessionStorage.getItem(AUTH_KEY) || 'null'); }catch(e){ auth = null; }
+function isTech(){ return !!auth; }
+function setAuth(a){
+  auth = a;
+  try{
+    if(a) sessionStorage.setItem(AUTH_KEY, JSON.stringify(a));
+    else sessionStorage.removeItem(AUTH_KEY);
+  }catch(e){}
+  updateAuthBtn();
+  renderTable();
+}
+function updateAuthBtn(){
+  const b = document.getElementById('authBtn');
+  if(isTech()){ b.textContent = '✓ المحضر — خروج'; b.classList.add('on'); }
+  else { b.textContent = '🔑 دخول المحضر'; b.classList.remove('on'); }
+}
+
 const teacherSelect = document.getElementById('teacherSelect');
 TEACHERS.forEach(t=>{
   const o = document.createElement('option');
@@ -575,7 +689,7 @@ async function apiSet(record){
   const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'}, // avoids CORS preflight on Apps Script
-    body: JSON.stringify({action:'set', record})
+    body: JSON.stringify({action:'set', record, auth})
   });
   if(!res.ok) throw new Error('network');
   const json = await res.json();
@@ -586,12 +700,24 @@ async function apiDelete(id){
   const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action:'delete', id})
+    body: JSON.stringify({action:'delete', id, auth})
   });
   if(!res.ok) throw new Error('network');
   const json = await res.json();
   if(!json.ok) throw new Error(json.error || 'api');
   return json.data || [];
+}
+
+async function apiLogin(user, pass){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'login', auth:{user, pass}})
+  });
+  if(!res.ok) throw new Error('network');
+  const json = await res.json();
+  if(!json.ok) throw new Error(json.error || 'api');
+  return true;
 }
 
 function renderTable(){
@@ -611,7 +737,7 @@ function renderTable(){
           const doneClass = b.completed ? ' done' : '';
           const doneBadge = b.completed ? '<span class="done-badge">✓ تم</span>' : '';
           html += `<td><div class="cell-booked${doneClass}" data-day="${d.key}" data-period="${p}" data-daylabel="${d.label}">
-            <button class="del" data-day="${d.key}" data-period="${p}">✕</button>
+            ${isTech() ? `<button class="del" data-day="${d.key}" data-period="${p}" aria-label="حذف الحجز">✕</button>` : ''}
             ${doneBadge}
             <span class="teacher">${escapeHtml(b.teacher||'')}</span>
             <span class="exp">${escapeHtml(b.experiment||'')}</span>
@@ -633,7 +759,8 @@ function renderTable(){
     cell.addEventListener('click', (e)=>{
       if(e.target.classList.contains('del')) return;
       const key = slotKey(currentWeek, currentLab, cell.dataset.day, parseInt(cell.dataset.period));
-      openModal(cell.dataset.day, parseInt(cell.dataset.period), cell.dataset.daylabel, bookings[key]);
+      if(isTech()) openModal(cell.dataset.day, parseInt(cell.dataset.period), cell.dataset.daylabel, bookings[key]);
+      else openInfo(parseInt(cell.dataset.period), cell.dataset.daylabel, bookings[key]);
     });
   });
   host.querySelectorAll('.del').forEach(btn=>{
@@ -659,10 +786,10 @@ function openModal(day, period, dayLabel, existing){
   document.getElementById('modalMeta').textContent = `الأسبوع ${currentWeek} — ${labLabel} — ${dayLabel} — الحصة ${period}`;
   teacherSelect.value = existing ? existing.teacher : TEACHERS[0];
   document.getElementById('expInput').value = existing ? existing.experiment : '';
-  document.getElementById('deleteRow').style.display = existing ? 'flex' : 'none';
+  document.getElementById('deleteRow').style.display = (existing && isTech()) ? 'flex' : 'none';
   const doneField = document.getElementById('doneField');
   const doneCheck = document.getElementById('doneCheck');
-  if(existing){
+  if(existing && isTech()){
     doneField.style.display = 'flex';
     doneCheck.checked = !!existing.completed;
   } else {
@@ -671,6 +798,73 @@ function openModal(day, period, dayLabel, existing){
   }
   document.getElementById('overlay').classList.add('show');
 }
+function openInfo(period, dayLabel, b){
+  if(!b) return;
+  const labLabel = LAB_LABELS[currentLab] || currentLab;
+  document.getElementById('infoMeta').textContent = `الأسبوع ${currentWeek} — ${labLabel} — ${dayLabel} — الحصة ${period}`;
+  document.getElementById('infoTeacher').textContent = b.teacher || '';
+  document.getElementById('infoExp').textContent = b.experiment || '';
+  document.getElementById('infoStatus').textContent = b.completed ? '✓ تم إجراء التجربة' : 'لم تُجرَ بعد';
+  document.getElementById('infoOverlay').classList.add('show');
+}
+document.getElementById('infoClose').addEventListener('click', ()=> document.getElementById('infoOverlay').classList.remove('show'));
+document.getElementById('infoOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'infoOverlay') e.target.classList.remove('show');
+});
+
+/* ---- نافذة الدخول ---- */
+const loginOverlay = document.getElementById('loginOverlay');
+const loginErr = document.getElementById('loginErr');
+function openLogin(){
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  loginErr.style.display = 'none';
+  loginOverlay.classList.add('show');
+  setTimeout(()=> document.getElementById('loginUser').focus(), 50);
+}
+function closeLogin(){ loginOverlay.classList.remove('show'); }
+document.getElementById('authBtn').addEventListener('click', ()=>{
+  if(isTech()){
+    if(confirm('تسجيل خروج المحضر؟')) setAuth(null);
+  } else openLogin();
+});
+document.getElementById('loginCancel').addEventListener('click', closeLogin);
+loginOverlay.addEventListener('click', (e)=>{ if(e.target.id === 'loginOverlay') closeLogin(); });
+async function submitLogin(){
+  const user = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!user || !pass){
+    loginErr.textContent = 'اكتب اسم المستخدم وكلمة المرور.';
+    loginErr.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('loginSubmit');
+  btn.disabled = true; btn.textContent = 'جارِ التحقق…';
+  try{
+    await apiLogin(user, pass);
+    setAuth({user, pass});
+    closeLogin();
+  }catch(err){
+    loginErr.textContent = err.message === 'unauthorized'
+      ? 'اسم المستخدم أو كلمة المرور غير صحيحة.'
+      : 'تعذّر التحقق — تأكد من الاتصال وحاول مرة أخرى.';
+    loginErr.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'دخول';
+  }
+}
+document.getElementById('loginSubmit').addEventListener('click', submitLogin);
+document.getElementById('loginPass').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') submitLogin(); });
+
+function handleAuthError(err){
+  if(err && err.message === 'unauthorized'){
+    setAuth(null);
+    setStatus(false, 'انتهت جلسة المحضر — سجّل الدخول مرة ثانية.');
+    return true;
+  }
+  return false;
+}
+
 function closeModal(){
   document.getElementById('overlay').classList.remove('show');
   modalCtx = null;
@@ -715,11 +909,18 @@ async function saveBooking(day, period, teacher, experiment, completed){
     setStatus(true);
   }catch(err){
     console.error(err);
+    if(handleAuthError(err)) { refreshBookings(); return; }
+    if(err.message === 'taken'){
+      setStatus(false, 'هذه الحصة حجزها معلم آخر قبل قليل — اختر حصة ثانية.');
+      refreshBookings();
+      return;
+    }
     setStatus(false, 'تعذّر حفظ الحجز — تحقق من الاتصال وحاول مرة أخرى.');
   }
 }
 async function deleteBooking(day, period){
   if(!apiReady) return;
+  if(!isTech()){ setStatus(false, 'الحذف متاح لمحضر المختبر فقط.'); return; }
   const id = slotKey(currentWeek, currentLab, day, period);
   delete bookings[id];
   renderTable();
@@ -729,6 +930,7 @@ async function deleteBooking(day, period){
     setStatus(true);
   }catch(err){
     console.error(err);
+    if(handleAuthError(err)) { refreshBookings(); return; }
     setStatus(false, 'تعذّر حذف الحجز — تحقق من الاتصال وحاول مرة أخرى.');
   }
 }
@@ -904,6 +1106,7 @@ function computeCurrentWeek(){
 }
 
 function init(){
+  updateAuthBtn();
   currentWeek = computeCurrentWeek();
   document.getElementById('weekNum').textContent = currentWeek;
   renderTable();
@@ -914,6 +1117,11 @@ function init(){
   }
   startPolling();
 }
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Escape') return;
+  closeModal(); closeLogin();
+  document.getElementById('infoOverlay').classList.remove('show');
+});
 init();
 </script>
 </body>
