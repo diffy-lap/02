@@ -224,11 +224,19 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
   <div class="row"><button class="primary" id="do-pin">حفظ</button><button class="ghost" id="close-pin">إلغاء</button></div>
 </dialog>
 
+<dialog id="mail-dlg">
+  <h2>تنبيه البريد الإلكتروني</h2>
+  <p class="note" style="margin:0 0 6px">يصلك بريد عند كل حجز جديد. يمكنك كتابة أكثر من بريد بينها فاصلة، واتركه فارغًا لإيقاف التنبيه.</p>
+  <label class="f" for="mail-to">البريد الإلكتروني</label>
+  <input id="mail-to" type="text" dir="ltr" inputmode="email" autocomplete="email" placeholder="name@rcjy.edu.sa">
+  <div class="row"><button class="primary" id="do-mail">حفظ</button><button class="ghost" id="close-mail">إلغاء</button></div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
-const API_URL = "https://script.google.com/macros/s/AKfycbwm4ePoRvv0p8W7P2uBYGYUGEQ_xf4XB_ak2es6J_l1G3tBEt2wP52SW3MqTStHrT57/exec";
+const API_URL = "";
 
 const SPECS = [
   { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
@@ -324,7 +332,7 @@ const isAdmin = () => !!session && session.role==="admin";
 function renderSession(){
   $("open-login").classList.toggle("hidden", !!session);
   $("session").classList.toggle("hidden", !session);
-  if (session) $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. يمكنك التأشير على الحجوزات المنفذة وحذفها.</span><span class="sbtns"><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
+  if (session) $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. يمكنك التأشير على الحجوزات المنفذة وحذفها.</span><span class="sbtns"><button id="open-mail">تنبيه البريد</button><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
 }
 function fillTeachers(){
   $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
@@ -440,7 +448,7 @@ document.addEventListener("click", async e=>{
     try{
       const r = await api("POST",{ action:"login", user, pin });
       if (r.ok){
-        session = { name:r.name, role:r.role, pin };
+        session = { name:r.name, role:r.role, pin, notify:r.notify||"" };
         try { sessionStorage.setItem("train-session", JSON.stringify(session)); } catch(e){}
         $("login-pin").value=""; $("login").close(); toast("تم الدخول");
         document.querySelector('[data-view="all"]').click();
@@ -459,6 +467,20 @@ document.addEventListener("click", async e=>{
       if (r.ok){ session.pin=n; try { sessionStorage.setItem("train-session", JSON.stringify(session)); } catch(e){} $("pin-dlg").close(); toast("تم تغيير الرقم السري"); }
       else toast(r.error, true);
     } catch(err){ toast("تعذّر تغيير الرقم السري", true); }
+    t.disabled=false;
+  } else if (t.id==="open-mail"){ $("mail-to").value = session.notify || ""; $("mail-dlg").showModal();
+  } else if (t.id==="close-mail"){ $("mail-dlg").close();
+  } else if (t.id==="do-mail"){
+    const email = $("mail-to").value.trim();
+    if (email && !email.split(/[,،\s]+/).filter(Boolean).every(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))){ toast("تأكد من صحة البريد الإلكتروني", true); return; }
+    t.disabled=true;
+    try{
+      const r = await api("POST",{ action:"setEmail", user:session.name, pin:session.pin, email });
+      if (r.ok){
+        session.notify = email; try { sessionStorage.setItem("train-session", JSON.stringify(session)); } catch(e){}
+        $("mail-dlg").close(); toast(email ? "سيصلك تنبيه على البريد عند كل حجز جديد" : "تم إيقاف تنبيه البريد");
+      } else toast(r.error, true);
+    } catch(err){ toast("تعذّر الحفظ. حاول مرة أخرى", true); }
     t.disabled=false;
   } else if (t.id==="logout"){
     session=null; try { sessionStorage.removeItem("train-session"); } catch(e){}
