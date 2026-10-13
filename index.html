@@ -439,6 +439,9 @@
     cursor:pointer;
     white-space:nowrap;
   }
+  .auth-btns{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+  .auth-btns [hidden]{display:none;}
+  .login-err.ok{background:var(--done-tint);color:var(--done);}
   .auth-btn.on{
     background:var(--done-tint);
     border-color:var(--done);
@@ -512,7 +515,10 @@
         <h1>🧪 جدول حجز المختبرات</h1>
         <p class="sub">ثانوية الدفي — مدارس الهيئة الملكية</p>
       </div>
-      <button class="auth-btn" id="authBtn">🔑 دخول المحضر</button>
+      <div class="auth-btns">
+        <button class="auth-btn" id="authBtn">🔑 دخول المحضر</button>
+        <button class="auth-btn" id="mailBtn" hidden>✉️ تنبيه البريد</button>
+      </div>
     </div>
 
     <div class="controls">
@@ -612,6 +618,22 @@
   </div>
 </div>
 
+<div class="overlay" id="mailOverlay">
+  <div class="modal">
+    <h3>تنبيه البريد الإلكتروني</h3>
+    <p class="meta">يصلك بريد كلما حجز معلم حصة جديدة. تقدر تكتب أكثر من بريد بينها فاصلة، واتركه فارغًا لإيقاف التنبيه.</p>
+    <div class="field">
+      <label for="mailTo">البريد الإلكتروني</label>
+      <input type="text" id="mailTo" dir="ltr" inputmode="email" autocomplete="email" placeholder="name@rcjy.edu.sa">
+    </div>
+    <div class="login-err" id="mailErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="mailCancel">إلغاء</button>
+      <button class="btn btn-primary" id="mailSubmit">حفظ</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const TEACHERS = [
   "حسين اليامي","ملحم الملحم","نضال السبيت","أحمد المطاوعة","سالم آل عمر",
@@ -664,6 +686,7 @@ function updateAuthBtn(){
   const b = document.getElementById('authBtn');
   if(isTech()){ b.textContent = '✓ المحضر — خروج'; b.classList.add('on'); }
   else { b.textContent = '🔑 دخول المحضر'; b.classList.remove('on'); }
+  document.getElementById('mailBtn').hidden = !isTech();
 }
 
 const teacherSelect = document.getElementById('teacherSelect');
@@ -717,7 +740,7 @@ async function apiLogin(user, pass){
   if(!res.ok) throw new Error('network');
   const json = await res.json();
   if(!json.ok) throw new Error(json.error || 'api');
-  return true;
+  return json;
 }
 
 function renderTable(){
@@ -841,8 +864,8 @@ async function submitLogin(){
   const btn = document.getElementById('loginSubmit');
   btn.disabled = true; btn.textContent = 'جارِ التحقق…';
   try{
-    await apiLogin(user, pass);
-    setAuth({user, pass});
+    const r = await apiLogin(user, pass);
+    setAuth({user, pass, notify: r.notify || ''});
     closeLogin();
   }catch(err){
     loginErr.textContent = err.message === 'unauthorized'
@@ -855,6 +878,46 @@ async function submitLogin(){
 }
 document.getElementById('loginSubmit').addEventListener('click', submitLogin);
 document.getElementById('loginPass').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') submitLogin(); });
+
+/* ---- تنبيه البريد (للمحضر) ---- */
+const mailOverlay = document.getElementById('mailOverlay');
+const mailErr = document.getElementById('mailErr');
+function closeMail(){ mailOverlay.classList.remove('show'); }
+document.getElementById('mailBtn').addEventListener('click', ()=>{
+  if(!isTech()) return;
+  document.getElementById('mailTo').value = auth.notify || '';
+  mailErr.style.display = 'none'; mailErr.classList.remove('ok');
+  mailOverlay.classList.add('show');
+  setTimeout(()=> document.getElementById('mailTo').focus(), 50);
+});
+document.getElementById('mailCancel').addEventListener('click', closeMail);
+mailOverlay.addEventListener('click', (e)=>{ if(e.target.id === 'mailOverlay') closeMail(); });
+document.getElementById('mailSubmit').addEventListener('click', async ()=>{
+  const email = document.getElementById('mailTo').value.trim();
+  const showMsg = (msg, ok)=>{ mailErr.textContent = msg; mailErr.classList.toggle('ok', !!ok); mailErr.style.display = 'block'; };
+  if(email && !email.split(/[,،\s]+/).filter(Boolean).every(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))){
+    showMsg('تأكد من صحة البريد الإلكتروني.'); return;
+  }
+  const btn = document.getElementById('mailSubmit');
+  btn.disabled = true; btn.textContent = 'جارِ الحفظ…';
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'setEmail', email, auth:{user:auth.user, pass:auth.pass}})
+    });
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.error || 'api');
+    setAuth(Object.assign({}, auth, {notify: email}));
+    showMsg(email ? 'تم الحفظ — سيصلك بريد مع كل حجز جديد.' : 'تم إيقاف تنبيه البريد.', true);
+    setTimeout(closeMail, 1400);
+  }catch(err){
+    if(handleAuthError(err)){ closeMail(); return; }
+    showMsg(err.message === 'bad_email' ? 'تأكد من صحة البريد الإلكتروني.' : 'تعذّر الحفظ — تأكد من الاتصال وحاول مرة أخرى.');
+  }finally{
+    btn.disabled = false; btn.textContent = 'حفظ';
+  }
+});
 
 function handleAuthError(err){
   if(err && err.message === 'unauthorized'){
