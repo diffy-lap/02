@@ -174,6 +174,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 .sp-hint{color:var(--muted);font-size:.84rem;margin:8px 0 0}
 .sp-opt:focus-visible,.sp-sec:focus-visible,.sp-club:focus-visible{outline:3px solid var(--c);outline-offset:2px}
 @media (max-width:560px){.sp-secs{grid-template-columns:repeat(4,1fr)}.sp-modes{grid-template-columns:1fr 1fr}}
+.past-note{margin:10px 0 0;background:var(--gold-soft);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:.88rem;font-weight:700}
 </style>
 </head>
 <body>
@@ -235,6 +236,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
       <div class="weeks" id="weeks"></div>
       <div class="board" id="board"></div>
       <p class="note">القاعة متاحة في جميع الحصص وفي الفسحة (بين الثالثة والرابعة).</p>
+      <p class="past-note hidden" id="past-note">التسجيل في الأوقات السابقة مفتوح الآن لتوثيق الاجتماعات التي عُقدت.</p>
     </section>
 
     <section class="step hidden" id="step-send">
@@ -434,7 +436,7 @@ function demoApi(method, body){
   let db = { bookings:[] };
   try { db = JSON.parse(localStorage.getItem("meet-demo")) || db; } catch(e){}
   const save = () => { try { localStorage.setItem("meet-demo", JSON.stringify(db)); } catch(e){} };
-  const out = extra => ({ ok:true, bookings:db.bookings, ...extra });
+  const out = extra => ({ ok:true, bookings:db.bookings, allowPast:!!db.allowPast, ...extra });
   if (method==="GET") return out();
   const acc = DEMO_ACC[body.user], authed = acc && acc[0]===body.pin ? { name:body.user, role:acc[1] } : null;
   if (body.action==="login") return authed ? { ok:true, ...authed } : { ok:false, error:"الرقم السري غير صحيح" };
@@ -442,8 +444,13 @@ function demoApi(method, body){
     if (!authed) return { ok:false, error:"الرقم السري الحالي غير صحيح" };
     DEMO_ACC[body.user][0] = body.newPin; return { ok:true };
   }
+  if (body.action==="setPast"){
+    if (!authed) return out({ ok:false, error:"سجّل الدخول من جديد" });
+    db.allowPast = !!body.allow;
+  }
   if (body.action==="book"){
     const d = DAYS.find(x=>x.date===body.date), s = String(body.slot);
+    if (body.date < todayStr() && !db.allowPast) return out({ ok:false, error:"لا يمكن الحجز في يوم مضى" });
     if (!d || d.holiday || !d.slots.includes(s)) return out({ ok:false, error:"موعد غير متاح" });
     if (busy(db.bookings, d.date, s)) return out({ ok:false, error:"هذا الموعد محجوز" });
     db.bookings.push({ id:Math.random().toString(36).slice(2,10), week:d.week, date:d.date, day:d.day, slot:s, owner:body.owner, attendees:body.attendees, topic:body.topic||"", done:false });
@@ -456,7 +463,8 @@ function demoApi(method, body){
   }
   save(); return out();
 }
-function take(r){ if (r && r.bookings) bookings = r.bookings; }
+let allowPast = false;
+function take(r){ if (r && r.bookings) bookings = r.bookings; if (r && "allowPast" in r) allowPast = !!r.allowPast; }
 async function load(){
   try { take(await api("GET")); }
   catch(e){ toast("تعذّر تحميل البيانات. تأكد من الاتصال ثم حدّث الصفحة", true); }
@@ -468,7 +476,7 @@ const isAdmin = () => !!session && session.role==="admin";
 function renderSession(){
   $("open-login").classList.toggle("hidden", !!session);
   $("session").classList.toggle("hidden", !session);
-  if (session) $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. يمكنك التأشير على الاجتماعات المنفذة وحذفها.</span><span class="sbtns"><button id="open-mail">تنبيه البريد</button><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
+  if (session) $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. يمكنك التأشير على الاجتماعات المنفذة وحذفها.</span><span class="sbtns"><button id="toggle-past">${allowPast ? "قفل التسجيل السابق" : "فتح التسجيل السابق"}</button><button id="open-mail">تنبيه البريد</button><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
 }
 function fillLists(){
   $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
@@ -510,9 +518,10 @@ function renderWeeks(id, active){
 const dayHead = d => `<div class="dname"><b>${d.day}</b><span>${fmtG.format(d.dt)} · ${fmtH.format(d.dt)}</span></div>`;
 function renderBoard(){
   const t = todayStr();
+  $("past-note").classList.toggle("hidden", !allowPast);
   $("board").innerHTML = DAYS.filter(d=>d.week===state.week).map(d=>{
     if (d.holiday) return `<div class="day">${dayHead(d)}<div class="holiday">إجازة</div></div>`;
-    const past = d.date < t;
+    const past = d.date < t && !allowPast;
     const slots = d.slots.map(s=>{
       const taken = busy(bookings, d.date, s);
       return `<button class="slot${s==="B"?" brk":""}" ${past||taken?"disabled":""} aria-pressed="${state.date===d.date&&state.slot===s}" data-date="${d.date}" data-slot="${s}" aria-label="${d.day} ${slotLabel(s)}${taken?" محجوز":""}">${slotName(s)}</button>`;
@@ -624,6 +633,10 @@ document.addEventListener("click", async e=>{
       else toast(r.error, true);
     } catch(err){ toast("تعذّر تغيير الرقم السري", true); }
     t.disabled=false;
+  } else if (t.id==="toggle-past"){
+    const allow = !allowPast;
+    if (allow && !confirm("فتح التسجيل في الأوقات السابقة؟ يقدر أي أحد يسجل اجتماعًا في يوم مضى حتى تقفله.")) return;
+    adminAction({ action:"setPast", allow }, allow ? "تم فتح التسجيل في الأوقات السابقة" : "تم قفل التسجيل في الأوقات السابقة");
   } else if (t.id==="open-mail"){ $("mail-to").value = session.notify || ""; $("mail-dlg").showModal();
   } else if (t.id==="close-mail"){ $("mail-dlg").close();
   } else if (t.id==="do-mail"){
