@@ -221,7 +221,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 <dialog id="login">
   <h2>دخول المشرفين</h2>
   <label class="f" for="login-user">الحساب</label>
-  <select id="login-user"><option value="أدمن">أدمن</option></select>
+  <select id="login-user"><option value="أدمن">أدمن</option><option value="رائد النشاط">رائد النشاط</option></select>
   <label class="f" for="login-pin">الرقم السري</label>
   <input id="login-pin" type="password" inputmode="numeric" autocomplete="current-password">
   <div class="row"><button class="primary" id="do-login">دخول</button><button class="ghost" id="close-login">إلغاء</button></div>
@@ -379,7 +379,7 @@ async function api(method, body){
     : await fetch(API_URL, { method:"POST", body:JSON.stringify(body) });
   return res.json();
 }
-const DEMO_ACC = { "أدمن":["1111","admin"] };
+const DEMO_ACC = { "أدمن":["1111","admin"], "رائد النشاط":["2222","admin"] };
 function demoApi(method, body){
   let db = { bookings:[] };
   try { db = JSON.parse(localStorage.getItem("club-demo")) || db; } catch(e){}
