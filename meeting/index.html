@@ -150,6 +150,30 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
   .brand svg{width:44px;height:44px}
 }
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+/* ===== منتقي الطلاب المشاركين (فصول / أندية / أسماء) ===== */
+.sp-modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px}
+.sp-opt{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 8px;cursor:pointer;font:inherit;font-weight:700;text-align:center;line-height:1.35}
+.sp-opt small{display:block;font-weight:500;color:var(--muted);font-size:.8rem;margin-top:2px}
+.sp-opt:hover{border-color:var(--c)}
+.sp-opt[aria-pressed="true"]{border-color:var(--c);background:var(--c-soft);color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.sp-opt[aria-pressed="true"] small{color:var(--c)}
+.sp-pane{margin-top:12px}
+.sp-secs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
+.sp-sec{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 0;cursor:pointer;font:inherit;font-weight:700}
+.sp-sec[aria-pressed="true"]{border-color:var(--c);background:var(--c);color:#fff}
+.sp-clubs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sp-club{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 10px;cursor:pointer;font:inherit;font-weight:700;font-size:.93rem;text-align:start}
+.sp-club::before{content:"";flex:none;width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:.75rem;line-height:1;color:#fff}
+.sp-club[aria-pressed="true"]{border-color:var(--c);background:var(--c-soft);color:var(--c)}
+.sp-club[aria-pressed="true"]::before{content:"✓";background:var(--c);border-color:var(--c)}
+.sp-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.sp-chip{background:var(--c-soft);color:var(--c);border-radius:999px;padding:3px 4px 3px 10px;font-size:.85rem;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.sp-chip button{border:0;background:none;color:inherit;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px}
+.sp-names{display:block;width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;min-height:120px}
+.sp-names:focus{outline:none;border-color:var(--c);box-shadow:0 0 0 3px var(--c-soft)}
+.sp-hint{color:var(--muted);font-size:.84rem;margin:8px 0 0}
+.sp-opt:focus-visible,.sp-sec:focus-visible,.sp-club:focus-visible{outline:3px solid var(--c);outline-offset:2px}
+@media (max-width:560px){.sp-secs{grid-template-columns:repeat(4,1fr)}.sp-modes{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -188,6 +212,7 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
       <div class="spans">
         <button class="span" data-mode="spec" aria-pressed="false">معلمو تخصص<small>كل معلمي التخصص المختار</small></button>
         <button class="span" data-mode="pick" aria-pressed="false">اختيار بالأسماء<small>معلمون وإداريون والمشرف الصحي</small></button>
+        <button class="span" data-mode="none" aria-pressed="false">بدون معلمين<small>الحضور طلاب فقط</small></button>
       </div>
       <div id="who-spec" class="hidden" style="margin-top:12px">
         <label class="f" for="spec">التخصص</label>
@@ -200,8 +225,13 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
       </div>
     </section>
 
+    <section class="step hidden" id="step-stu">
+      <h2><span class="n">٣</span>الطلاب المشاركون</h2>
+      <div id="sp"></div>
+    </section>
+
     <section class="step hidden" id="step-slot">
-      <h2><span class="n">٣</span>الموعد</h2>
+      <h2><span class="n">٤</span>الموعد</h2>
       <div class="weeks" id="weeks"></div>
       <div class="board" id="board"></div>
       <p class="note">القاعة متاحة في جميع الحصص وفي الفسحة (بين الثالثة والرابعة).</p>
@@ -256,6 +286,78 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+/* ===== منتقي الطلاب المشاركين: فصول، أو أندية طلابية، أو أسماء تُكتب يدويًا ===== */
+const CLUBS = ["النادي الكشفي","النادي العلمي","نادي التطوع","نادي سفراء القيم","النادي الرياضي","النادي الفني","النادي الثقافي","النادي البيئي","الفريق الإعلامي","نادي مصادر التعلم"];
+const SP_SECTIONS = { "أول ثانوي":11, "ثاني ثانوي":9, "ثالث ثانوي":8 };
+const SP_LABEL = { class:"الفصول", clubs:"الأندية", names:"الطلاب" };
+function StudentPicker(root, opts){
+  opts = opts || {};
+  const st = { mode:"", grade:"", classes:[], clubs:[] };
+  const e_ = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const modes = [["class","طلاب فصول","فصل أو أكثر"],["clubs","الأندية الطلابية","نادٍ أو أكثر"],["names","أسماء الطلاب","تُكتب يدويًا"]];
+  if (opts.none) modes.push(["none", opts.noneLabel || "بدون طلاب", opts.noneHint || "لا يشارك طلاب"]);
+  root.innerHTML = `
+    <div class="sp-modes" role="group" aria-label="طريقة تحديد الطلاب">${modes.map(m=>`<button type="button" class="sp-opt" data-spmode="${m[0]}" aria-pressed="false">${m[1]}<small>${m[2]}</small></button>`).join("")}</div>
+    <div class="sp-pane hidden" data-pane="class">
+      <select class="sp-grade" aria-label="الصف"><option value="">اختر الصف</option>${Object.keys(SP_SECTIONS).map(g=>`<option>${g}</option>`).join("")}</select>
+      <div class="sp-secs" aria-label="الشعب"></div>
+      <p class="sp-hint">اختر شعبة أو أكثر، ويمكنك تغيير الصف وإضافة شعب من صف آخر.</p>
+      <div class="sp-chips"></div>
+    </div>
+    <div class="sp-pane hidden" data-pane="clubs">
+      <div class="sp-clubs">${CLUBS.map(c=>`<button type="button" class="sp-club" data-spclub="${e_(c)}" aria-pressed="false">${e_(c)}</button>`).join("")}</div>
+    </div>
+    <div class="sp-pane hidden" data-pane="names">
+      <textarea class="sp-names" maxlength="1500" aria-label="أسماء الطلاب" placeholder="اكتب كل اسم في سطر"></textarea>
+      <p class="sp-hint">عدد الطلاب: <b class="sp-count">0</b></p>
+    </div>`;
+  const q = s => root.querySelector(s);
+  const names = () => q(".sp-names").value.split(/\n|،|,/).map(s=>s.trim()).filter(Boolean);
+  const clubs = () => CLUBS.filter(c=>st.clubs.includes(c));
+  const toggle = (arr, v) => { const i = arr.indexOf(v); i < 0 ? arr.push(v) : arr.splice(i,1); };
+  function render(){
+    root.querySelectorAll("[data-spmode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.spmode===st.mode));
+    root.querySelectorAll("[data-pane]").forEach(p=>p.classList.toggle("hidden", p.dataset.pane!==st.mode));
+    const n = SP_SECTIONS[st.grade] || 0;
+    q(".sp-secs").innerHTML = Array.from({length:n},(_,i)=>{ const c = `${st.grade} ${i+1}`;
+      return `<button type="button" class="sp-sec" data-spclass="${e_(c)}" aria-pressed="${st.classes.includes(c)}" aria-label="${e_(c)}">${i+1}</button>`; }).join("");
+    q(".sp-chips").innerHTML = st.classes.map(c=>`<span class="sp-chip">${e_(c)}<button type="button" data-spunclass="${e_(c)}" aria-label="إزالة ${e_(c)}">×</button></span>`).join("");
+    root.querySelectorAll("[data-spclub]").forEach(b=>b.setAttribute("aria-pressed", st.clubs.includes(b.dataset.spclub)));
+    q(".sp-count").textContent = names().length;
+  }
+  const changed = () => { render(); if (opts.onChange) opts.onChange(); };
+  root.addEventListener("click", ev=>{
+    const b = ev.target.closest("button"); if (!b || !root.contains(b)) return;
+    if (b.dataset.spmode) st.mode = b.dataset.spmode;
+    else if (b.dataset.spclass) toggle(st.classes, b.dataset.spclass);
+    else if (b.dataset.spunclass) st.classes = st.classes.filter(c=>c!==b.dataset.spunclass);
+    else if (b.dataset.spclub) toggle(st.clubs, b.dataset.spclub);
+    else return;
+    changed();
+  });
+  q(".sp-grade").addEventListener("change", ev=>{ st.grade = ev.target.value; changed(); });
+  q(".sp-names").addEventListener("input", changed);
+  const list = () => st.mode==="class" ? st.classes.slice() : st.mode==="clubs" ? clubs() : st.mode==="names" ? names() : [];
+  const api = {
+    kind: () => st.mode,
+    list,
+    ready: () => st.mode==="none" || list().length > 0,
+    text: () => list().join("، "),
+    /* النص المحفوظ: "الفصول: …" أو "الأندية: …" أو "الطلاب: …" */
+    labeled: () => st.mode && st.mode!=="none" && list().length ? `${SP_LABEL[st.mode]}: ${list().join("، ")}` : "",
+    /* وصف مختصر لسطر الملخص */
+    summary: () => {
+      const l = list();
+      if (st.mode==="names") return `${l.length} طالب`;
+      if (st.mode==="none" || !l.length) return "";
+      return l.length <= 3 ? l.join("، ") : `${l.length} ${st.mode==="class" ? "فصول" : "أندية"}`;
+    },
+    reset: () => { st.mode=""; st.grade=""; st.classes=[]; st.clubs=[]; q(".sp-grade").value=""; q(".sp-names").value=""; render(); }
+  };
+  render();
+  return api;
+}
+
 /* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
 const API_URL = "";
 
@@ -271,7 +373,7 @@ const SPECS = [
   { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
   { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
   { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
-  { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي"] }
+  { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي","أمين المصادر","السكرتير"] }
 ];
 const SPEC_ONLY = SPECS.filter(s=>!s.admin);
 
@@ -310,11 +412,14 @@ const state = { owner:"", mode:"", spec:"", picked:new Set(), week:defaultWeek()
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const busy = (list, date, s) => list.some(b=>b.date===date && String(b.slot)===s);
-function attendeesText(){
+let picker = null;
+function staffText(){
   if (state.mode==="spec") return state.spec ? `معلمو ${state.spec}` : "";
   if (state.mode==="pick") return [...state.picked].join("، ");
   return "";
 }
+/* الحضور = المعلمون والإداريون + الطلاب (إن وُجدوا) */
+function attendeesText(){ return [staffText(), picker ? picker.labeled() : ""].filter(Boolean).join(" | "); }
 
 /* الاتصال */
 async function api(method, body){
@@ -372,9 +477,10 @@ function fillLists(){
   $("plist").innerHTML = SPECS.map(s=>`<div class="pgroup"><h3>${esc(s.name)}</h3>${s.teachers.map(t=>
     `<label data-name="${esc(t)}"><input type="checkbox" value="${esc(t)}">${esc(t)}</label>`).join("")}</div>`).join("");
 }
-function whoReady(){ return state.mode==="spec" ? !!state.spec : state.mode==="pick" ? state.picked.size>0 : false; }
+function whoReady(){ return state.mode==="spec" ? !!state.spec : state.mode==="pick" ? state.picked.size>0 : state.mode==="none"; }
+function stuReady(){ return !!picker && picker.ready() && !!attendeesText(); }
 function renderNew(){
-  const hasOwner = !!state.owner, hasWho = hasOwner && whoReady();
+  const hasOwner = !!state.owner, hasStaff = hasOwner && whoReady(), hasWho = hasStaff && stuReady();
   $("step-who").classList.toggle("hidden", !hasOwner);
   document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===state.mode));
   $("who-spec").classList.toggle("hidden", state.mode!=="spec");
@@ -382,13 +488,14 @@ function renderNew(){
   const sp = SPEC_ONLY.find(s=>s.name===state.spec);
   $("spec-chips").innerHTML = sp ? sp.teachers.map(t=>`<span class="chip">${esc(t)}</span>`).join("") : "";
   $("pick-count").textContent = `${state.picked.size} مختار`;
+  $("step-stu").classList.toggle("hidden", !hasStaff);
   $("step-slot").classList.toggle("hidden", !hasWho);
   if (hasWho){ renderWeeks("weeks", state.week); renderBoard(); }
   const ready = hasWho && state.date && state.slot;
   $("step-send").classList.toggle("hidden", !ready);
   if (ready){
     const d = DAYS.find(x=>x.date===state.date);
-    const who = state.mode==="spec" ? `معلمو ${state.spec}` : `${state.picked.size} من الحضور`;
+    const who = [state.mode==="spec" ? `معلمو ${state.spec}` : state.mode==="pick" ? `${state.picked.size} من المعلمين` : "", picker.summary()].filter(Boolean).join(" + ");
     $("summary").textContent = `${state.owner} — ${who} — ${d.day} ${fmtG.format(d.dt)}، ${slotLabel(state.slot)}`;
   }
 }
@@ -432,7 +539,7 @@ function renderAgenda(){
 }
 function renderAll(){ renderSession(); renderNew(); renderAgenda(); }
 function resetWho(){
-  state.mode=""; state.spec=""; state.picked.clear(); $("spec").value=""; $("filter").value="";
+  state.mode=""; state.spec=""; state.picked.clear(); $("spec").value=""; $("filter").value=""; if (picker) picker.reset();
   document.querySelectorAll("#plist input").forEach(i=>i.checked=false); filterList();
 }
 function filterList(){
@@ -544,6 +651,7 @@ $("plist").addEventListener("change", e=>{
   renderNew();
 });
 $("filter").addEventListener("input", filterList);
+picker = StudentPicker($("sp"), { onChange: renderNew, none:true, noneHint:"اجتماع للمعلمين فقط" });
 
 fillLists();
 load();
