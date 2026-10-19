@@ -211,14 +211,13 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
     <section class="step hidden" id="step-who">
       <h2><span class="n">٢</span>الحضور</h2>
       <div class="spans">
-        <button class="span" data-mode="spec" aria-pressed="false">معلمو تخصص<small>كل معلمي التخصص المختار</small></button>
-        <button class="span" data-mode="pick" aria-pressed="false">اختيار بالأسماء<small>معلمون وإداريون والمشرف الصحي</small></button>
+        <button class="span" data-mode="spec" aria-pressed="false">معلمو تخصص<small>تخصص أو أكثر</small></button>
+        <button class="span" data-mode="pick" aria-pressed="false">اختيار بالأسماء<small>معلمون وإداريون ومشرفون</small></button>
         <button class="span" data-mode="none" aria-pressed="false">بدون معلمين<small>الحضور طلاب فقط</small></button>
       </div>
       <div id="who-spec" class="hidden" style="margin-top:12px">
-        <label class="f" for="spec">التخصص</label>
-        <select id="spec"></select>
-        <div class="chips" id="spec-chips"></div>
+        <div class="sp-clubs" id="spec-btns" role="group" aria-label="التخصصات"></div>
+        <p class="sp-hint" id="spec-count"></p>
       </div>
       <div id="who-pick" class="picker hidden">
         <div class="tools"><input id="filter" placeholder="ابحث بالاسم" aria-label="ابحث بالاسم" autocomplete="off"><span class="count" id="pick-count">0 مختار</span></div>
@@ -375,7 +374,8 @@ const SPECS = [
   { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
   { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
   { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
-  { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي","أمين المصادر","المساعد الإداري"] }
+  { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي","أمين المصادر","المساعد الإداري"] },
+  { name:"المشرفون التربويون", admin:true, teachers:["مشرف العلوم","مشرف الرياضيات","مشرف اللغة العربية","مشرف التربية الإسلامية","مشرف الاجتماعيات","مشرف اللغة الإنجليزية"] }
 ];
 const SPEC_ONLY = SPECS.filter(s=>!s.admin);
 
@@ -410,13 +410,14 @@ function runningWeek(){ const d = DAYS.find(x=>x.date===todayStr()); return d ? 
 let bookings = [];
 let session = null;
 try { session = JSON.parse(sessionStorage.getItem("meet-session")||"null"); } catch(e){}
-const state = { owner:"", mode:"", spec:"", picked:new Set(), week:defaultWeek(), date:null, slot:null, allWeek:defaultWeek() };
+const state = { owner:"", mode:"", specs:[], picked:new Set(), week:defaultWeek(), date:null, slot:null, allWeek:defaultWeek() };
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const busy = (list, date, s) => list.some(b=>b.date===date && String(b.slot)===s);
 let picker = null;
+const specList = () => SPEC_ONLY.map(s=>s.name).filter(n=>state.specs.includes(n));
 function staffText(){
-  if (state.mode==="spec") return state.spec ? `معلمو ${state.spec}` : "";
+  if (state.mode==="spec") return state.specs.length ? `معلمو ${specList().join("، ")}` : "";
   if (state.mode==="pick") return [...state.picked].join("، ");
   return "";
 }
@@ -481,11 +482,11 @@ function renderSession(){
 function fillLists(){
   $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
     `<optgroup label="${esc(s.name)}">${s.teachers.map(t=>`<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
-  $("spec").innerHTML = `<option value="">اختر التخصص</option>` + SPEC_ONLY.map(s=>`<option>${esc(s.name)}</option>`).join("");
+  $("spec-btns").innerHTML = SPEC_ONLY.map(s=>`<button type="button" class="sp-club" data-spec="${esc(s.name)}" aria-pressed="false">${esc(s.name)}</button>`).join("");
   $("plist").innerHTML = SPECS.map(s=>`<div class="pgroup"><h3>${esc(s.name)}</h3>${s.teachers.map(t=>
     `<label data-name="${esc(t)}"><input type="checkbox" value="${esc(t)}">${esc(t)}</label>`).join("")}</div>`).join("");
 }
-function whoReady(){ return state.mode==="spec" ? !!state.spec : state.mode==="pick" ? state.picked.size>0 : state.mode==="none"; }
+function whoReady(){ return state.mode==="spec" ? state.specs.length>0 : state.mode==="pick" ? state.picked.size>0 : state.mode==="none"; }
 function stuReady(){ return !!picker && picker.ready() && !!attendeesText(); }
 function renderNew(){
   const hasOwner = !!state.owner, hasStaff = hasOwner && whoReady(), hasWho = hasStaff && stuReady();
@@ -493,8 +494,9 @@ function renderNew(){
   document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===state.mode));
   $("who-spec").classList.toggle("hidden", state.mode!=="spec");
   $("who-pick").classList.toggle("hidden", state.mode!=="pick");
-  const sp = SPEC_ONLY.find(s=>s.name===state.spec);
-  $("spec-chips").innerHTML = sp ? sp.teachers.map(t=>`<span class="chip">${esc(t)}</span>`).join("") : "";
+  document.querySelectorAll("[data-spec]").forEach(b=>b.setAttribute("aria-pressed", state.specs.includes(b.dataset.spec)));
+  const nT = SPEC_ONLY.filter(s=>state.specs.includes(s.name)).reduce((a,s)=>a+s.teachers.length,0);
+  $("spec-count").textContent = state.specs.length ? `${state.specs.length} تخصص — ${nT} معلم` : "اختر تخصصًا أو أكثر";
   $("pick-count").textContent = `${state.picked.size} مختار`;
   $("step-stu").classList.toggle("hidden", !hasStaff);
   $("step-slot").classList.toggle("hidden", !hasWho);
@@ -503,7 +505,7 @@ function renderNew(){
   $("step-send").classList.toggle("hidden", !ready);
   if (ready){
     const d = DAYS.find(x=>x.date===state.date);
-    const who = [state.mode==="spec" ? `معلمو ${state.spec}` : state.mode==="pick" ? `${state.picked.size} من المعلمين` : "", picker.summary()].filter(Boolean).join(" + ");
+    const who = [state.mode==="spec" ? (state.specs.length<=2 ? `معلمو ${specList().join(" و")}` : `معلمو ${state.specs.length} تخصصات`) : state.mode==="pick" ? `${state.picked.size} من المعلمين` : "", picker.summary()].filter(Boolean).join(" + ");
     $("summary").textContent = `${state.owner} — ${who} — ${d.day} ${fmtG.format(d.dt)}، ${slotLabel(state.slot)}`;
   }
 }
@@ -548,7 +550,7 @@ function renderAgenda(){
 }
 function renderAll(){ renderSession(); renderNew(); renderAgenda(); }
 function resetWho(){
-  state.mode=""; state.spec=""; state.picked.clear(); $("spec").value=""; $("filter").value=""; if (picker) picker.reset();
+  state.mode=""; state.specs=[]; state.picked.clear(); $("filter").value=""; if (picker) picker.reset();
   document.querySelectorAll("#plist input").forEach(i=>i.checked=false); filterList();
 }
 function filterList(){
@@ -581,6 +583,9 @@ document.addEventListener("click", async e=>{
     load();
   } else if (t.dataset.mode){
     state.mode=t.dataset.mode; renderNew();
+  } else if (t.dataset.spec){
+    const i = state.specs.indexOf(t.dataset.spec);
+    i<0 ? state.specs.push(t.dataset.spec) : state.specs.splice(i,1); renderNew();
   } else if (t.dataset.week){
     if (t.parentElement.id==="weeks-all"){ state.allWeek=+t.dataset.week; renderAgenda(); }
     else { state.week=+t.dataset.week; renderNew(); }
@@ -657,7 +662,6 @@ document.addEventListener("click", async e=>{
   }
 });
 $("teacher").addEventListener("change", e=>{ state.owner=e.target.value; renderNew(); });
-$("spec").addEventListener("change", e=>{ state.spec=e.target.value; renderNew(); });
 $("plist").addEventListener("change", e=>{
   if (e.target.type!=="checkbox") return;
   e.target.checked ? state.picked.add(e.target.value) : state.picked.delete(e.target.value);
