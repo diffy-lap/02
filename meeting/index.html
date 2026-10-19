@@ -210,19 +210,15 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 
     <section class="step hidden" id="step-who">
       <h2><span class="n">٢</span>الحضور</h2>
-      <div class="spans">
-        <button class="span" data-mode="spec" aria-pressed="false">معلمو تخصص<small>تخصص أو أكثر</small></button>
-        <button class="span" data-mode="pick" aria-pressed="false">اختيار بالأسماء<small>معلمون وإداريون ومشرفون</small></button>
-        <button class="span" data-mode="none" aria-pressed="false">بدون معلمين<small>الحضور طلاب فقط</small></button>
-      </div>
-      <div id="who-spec" class="hidden" style="margin-top:12px">
-        <div class="sp-clubs" id="spec-btns" role="group" aria-label="التخصصات"></div>
-        <p class="sp-hint" id="spec-count"></p>
-      </div>
-      <div id="who-pick" class="picker hidden">
+      <label class="f">تخصصات كاملة <small style="font-weight:500;color:var(--muted)">(اختياري — تخصص أو أكثر)</small></label>
+      <div class="sp-clubs" id="spec-btns" role="group" aria-label="التخصصات"></div>
+      <label class="f" style="margin-top:16px">أسماء محددة <small style="font-weight:500;color:var(--muted)">(إداريون ومشرفون ومعلمون)</small></label>
+      <div id="who-pick" class="picker" style="margin-top:0">
         <div class="tools"><input id="filter" placeholder="ابحث بالاسم" aria-label="ابحث بالاسم" autocomplete="off"><span class="count" id="pick-count">0 مختار</span></div>
         <div class="plist" id="plist"></div>
       </div>
+      <p class="sp-hint" id="spec-count"></p>
+      <button type="button" class="sp-opt" id="no-staff" aria-pressed="false" style="margin-top:12px;width:100%">بدون معلمين<small>الحضور طلاب فقط</small></button>
     </section>
 
     <section class="step hidden" id="step-stu">
@@ -377,7 +373,6 @@ const SPECS = [
   { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي","أمين المصادر","المساعد الإداري"] },
   { name:"المشرفون التربويون", admin:true, teachers:["مشرف العلوم","مشرف الرياضيات","مشرف اللغة العربية","مشرف التربية الإسلامية","مشرف الاجتماعيات","مشرف اللغة الإنجليزية"] }
 ];
-const SPEC_ONLY = SPECS.filter(s=>!s.admin);
 
 /* الأسابيع 6 إلى 17. إجازة الخريف (22–26 نوفمبر) ليست أسبوعًا دراسيًا */
 const FIRST_WEEK = 6, LAST_WEEK = 17, BREAK_AFTER = 13;
@@ -410,16 +405,52 @@ function runningWeek(){ const d = DAYS.find(x=>x.date===todayStr()); return d ? 
 let bookings = [];
 let session = null;
 try { session = JSON.parse(sessionStorage.getItem("meet-session")||"null"); } catch(e){}
-const state = { owner:"", mode:"", specs:[], picked:new Set(), week:defaultWeek(), date:null, slot:null, allWeek:defaultWeek() };
+const state = { owner:"", week:defaultWeek(), date:null, slot:null, allWeek:defaultWeek() };
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const busy = (list, date, s) => list.some(b=>b.date===date && String(b.slot)===s);
 let picker = null;
-const specList = () => SPEC_ONLY.map(s=>s.name).filter(n=>state.specs.includes(n));
+/* ===== حضور المعلمين: تخصصات كاملة + أسماء محددة (إداريون ومشرفون ومعلمون) معًا ===== */
+const STAFF_SPECS = SPECS.filter(s=>!s.admin);
+const STAFF_ORDER = [...SPECS.filter(s=>s.admin), ...STAFF_SPECS];
+const staff = { specs:[], picked:new Set(), none:false };
+const staffSpecList = () => STAFF_SPECS.map(s=>s.name).filter(n=>staff.specs.includes(n));
+function staffCovered(){ const c = new Set(); STAFF_SPECS.forEach(s=>{ if (staff.specs.includes(s.name)) s.teachers.forEach(t=>c.add(t)); }); return c; }
+function staffExtra(){ const c = staffCovered(); return [...staff.picked].filter(n=>!c.has(n)); }
 function staffText(){
-  if (state.mode==="spec") return state.specs.length ? `معلمو ${specList().join("، ")}` : "";
-  if (state.mode==="pick") return [...state.picked].join("، ");
-  return "";
+  const parts = [];
+  if (staff.specs.length) parts.push(`معلمو ${staffSpecList().join("، ")}`);
+  const e = staffExtra(); if (e.length) parts.push(e.join("، "));
+  return parts.join("؛ ");
+}
+function staffReady(){ return staff.none || staff.specs.length > 0 || staffExtra().length > 0; }
+function staffSummary(){
+  const p = [], n = staff.specs.length, e = staffExtra();
+  if (n) p.push(n <= 2 ? `معلمو ${staffSpecList().join(" و")}` : `معلمو ${n} تخصصات`);
+  if (e.length) p.push(e.length <= 2 ? e.join(" و") : `${e.length} بالاسم`);
+  return p.join(" + ");
+}
+function fillStaff(){
+  $("spec-btns").innerHTML = STAFF_SPECS.map(s=>`<button type="button" class="sp-club" data-spec="${esc(s.name)}" aria-pressed="false">${esc(s.name)}</button>`).join("");
+  $("plist").innerHTML = STAFF_ORDER.map(s=>`<div class="pgroup"><h3>${esc(s.name)}</h3>${s.teachers.map(t=>
+    `<label data-name="${esc(t)}"><input type="checkbox" value="${esc(t)}">${esc(t)}</label>`).join("")}</div>`).join("");
+}
+function renderStaff(){
+  document.querySelectorAll("[data-spec]").forEach(b=>b.setAttribute("aria-pressed", staff.specs.includes(b.dataset.spec)));
+  $("no-staff").setAttribute("aria-pressed", staff.none);
+  const c = staffCovered();
+  document.querySelectorAll("#plist input").forEach(i=>{ const inSpec = c.has(i.value); i.disabled = inSpec; i.checked = inSpec || staff.picked.has(i.value); });
+  const e = staffExtra().length;
+  $("pick-count").textContent = `${e} مختار`;
+  $("spec-count").textContent = staff.none ? "بدون معلمين"
+    : (staff.specs.length || e) ? `المختار: ${[staff.specs.length ? `${staff.specs.length} تخصص (${c.size} معلم)` : "", e ? `${e} بالاسم` : ""].filter(Boolean).join(" + ")}`
+    : "اختر تخصصات كاملة أو أسماء محددة، أو الاثنين معًا.";
+}
+function resetStaff(){ staff.specs=[]; staff.picked.clear(); staff.none=false; $("filter").value=""; filterList(); }
+function staffClick(t){
+  if (t.dataset.spec){ const i = staff.specs.indexOf(t.dataset.spec); i<0 ? staff.specs.push(t.dataset.spec) : staff.specs.splice(i,1); staff.none=false; return true; }
+  if (t.id==="no-staff"){ staff.none = !staff.none; if (staff.none){ staff.specs=[]; staff.picked.clear(); } return true; }
+  return false;
 }
 /* الحضور = المعلمون والإداريون + الطلاب (إن وُجدوا) */
 function attendeesText(){ return [staffText(), picker ? picker.labeled() : ""].filter(Boolean).join(" | "); }
@@ -482,22 +513,13 @@ function renderSession(){
 function fillLists(){
   $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
     `<optgroup label="${esc(s.name)}">${s.teachers.map(t=>`<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
-  $("spec-btns").innerHTML = SPEC_ONLY.map(s=>`<button type="button" class="sp-club" data-spec="${esc(s.name)}" aria-pressed="false">${esc(s.name)}</button>`).join("");
-  $("plist").innerHTML = SPECS.map(s=>`<div class="pgroup"><h3>${esc(s.name)}</h3>${s.teachers.map(t=>
-    `<label data-name="${esc(t)}"><input type="checkbox" value="${esc(t)}">${esc(t)}</label>`).join("")}</div>`).join("");
+  fillStaff();
 }
-function whoReady(){ return state.mode==="spec" ? state.specs.length>0 : state.mode==="pick" ? state.picked.size>0 : state.mode==="none"; }
 function stuReady(){ return !!picker && picker.ready() && !!attendeesText(); }
 function renderNew(){
-  const hasOwner = !!state.owner, hasStaff = hasOwner && whoReady(), hasWho = hasStaff && stuReady();
+  const hasOwner = !!state.owner, hasStaff = hasOwner && staffReady(), hasWho = hasStaff && stuReady();
   $("step-who").classList.toggle("hidden", !hasOwner);
-  document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===state.mode));
-  $("who-spec").classList.toggle("hidden", state.mode!=="spec");
-  $("who-pick").classList.toggle("hidden", state.mode!=="pick");
-  document.querySelectorAll("[data-spec]").forEach(b=>b.setAttribute("aria-pressed", state.specs.includes(b.dataset.spec)));
-  const nT = SPEC_ONLY.filter(s=>state.specs.includes(s.name)).reduce((a,s)=>a+s.teachers.length,0);
-  $("spec-count").textContent = state.specs.length ? `${state.specs.length} تخصص — ${nT} معلم` : "اختر تخصصًا أو أكثر";
-  $("pick-count").textContent = `${state.picked.size} مختار`;
+  renderStaff();
   $("step-stu").classList.toggle("hidden", !hasStaff);
   $("step-slot").classList.toggle("hidden", !hasWho);
   if (hasWho){ renderWeeks("weeks", state.week); renderBoard(); }
@@ -505,7 +527,7 @@ function renderNew(){
   $("step-send").classList.toggle("hidden", !ready);
   if (ready){
     const d = DAYS.find(x=>x.date===state.date);
-    const who = [state.mode==="spec" ? (state.specs.length<=2 ? `معلمو ${specList().join(" و")}` : `معلمو ${state.specs.length} تخصصات`) : state.mode==="pick" ? `${state.picked.size} من المعلمين` : "", picker.summary()].filter(Boolean).join(" + ");
+    const who = [staffSummary(), picker.summary()].filter(Boolean).join(" + ");
     $("summary").textContent = `${state.owner} — ${who} — ${d.day} ${fmtG.format(d.dt)}، ${slotLabel(state.slot)}`;
   }
 }
@@ -549,10 +571,7 @@ function renderAgenda(){
   }).join("");
 }
 function renderAll(){ renderSession(); renderNew(); renderAgenda(); }
-function resetWho(){
-  state.mode=""; state.specs=[]; state.picked.clear(); $("filter").value=""; if (picker) picker.reset();
-  document.querySelectorAll("#plist input").forEach(i=>i.checked=false); filterList();
-}
+function resetWho(){ resetStaff(); if (picker) picker.reset(); }
 function filterList(){
   const q = $("filter").value.trim();
   document.querySelectorAll("#plist .pgroup").forEach(g=>{
@@ -581,11 +600,8 @@ document.addEventListener("click", async e=>{
     $("view-new").classList.toggle("hidden", t.dataset.view!=="new");
     $("view-all").classList.toggle("hidden", t.dataset.view!=="all");
     load();
-  } else if (t.dataset.mode){
-    state.mode=t.dataset.mode; renderNew();
-  } else if (t.dataset.spec){
-    const i = state.specs.indexOf(t.dataset.spec);
-    i<0 ? state.specs.push(t.dataset.spec) : state.specs.splice(i,1); renderNew();
+  } else if (staffClick(t)){
+    renderNew();
   } else if (t.dataset.week){
     if (t.parentElement.id==="weeks-all"){ state.allWeek=+t.dataset.week; renderAgenda(); }
     else { state.week=+t.dataset.week; renderNew(); }
@@ -664,8 +680,8 @@ document.addEventListener("click", async e=>{
 $("teacher").addEventListener("change", e=>{ state.owner=e.target.value; renderNew(); });
 $("plist").addEventListener("change", e=>{
   if (e.target.type!=="checkbox") return;
-  e.target.checked ? state.picked.add(e.target.value) : state.picked.delete(e.target.value);
-  renderNew();
+  e.target.checked ? staff.picked.add(e.target.value) : staff.picked.delete(e.target.value);
+  staff.none = false; renderNew();
 });
 $("filter").addEventListener("input", filterList);
 picker = StudentPicker($("sp"), { onChange: renderNew, none:true, noneHint:"اجتماع للمعلمين فقط" });
