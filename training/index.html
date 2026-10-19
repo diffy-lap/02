@@ -162,6 +162,15 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 .sp-hint{color:var(--muted);font-size:.84rem;margin:8px 0 0}
 .sp-opt:focus-visible,.sp-sec:focus-visible,.sp-club:focus-visible{outline:3px solid var(--c);outline-offset:2px}
 @media (max-width:560px){.sp-secs{grid-template-columns:repeat(4,1fr)}.sp-modes{grid-template-columns:1fr 1fr}}
+.picker{border:1.5px solid var(--line);border-radius:12px;background:var(--card);margin-top:12px}
+.picker .tools{display:flex;gap:8px;align-items:center;padding:10px;border-bottom:1px solid var(--line)}
+.picker .tools input{flex:1}
+.picker .count{font-size:.85rem;color:var(--c);font-weight:700;white-space:nowrap}
+.plist{max-height:320px;overflow-y:auto;padding:4px 10px 10px}
+.plist h3{margin:12px 0 4px;font-size:.85rem;color:var(--muted)}
+.plist label{display:flex;align-items:center;gap:10px;padding:6px 4px;border-radius:8px;cursor:pointer}
+.plist label:hover{background:var(--c-soft)}
+.plist input{width:18px;height:18px;accent-color:var(--c);flex:none;padding:0}
 </style>
 </head>
 <body>
@@ -203,13 +212,30 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
       </div>
     </section>
 
+    <section class="step hidden" id="step-staff">
+      <h2><span class="n">٣</span>الحضور من المعلمين</h2>
+      <div class="spans">
+        <button class="span" data-mode="spec" aria-pressed="false">معلمو تخصص<small>تخصص أو أكثر</small></button>
+        <button class="span" data-mode="pick" aria-pressed="false">اختيار بالأسماء<small>معلمون وإداريون ومشرفون</small></button>
+        <button class="span" data-mode="none" aria-pressed="false">بدون معلمين<small>لا يحضر معلمون</small></button>
+      </div>
+      <div id="who-spec" class="hidden" style="margin-top:12px">
+        <div class="sp-clubs" id="spec-btns" role="group" aria-label="التخصصات"></div>
+        <p class="sp-hint" id="spec-count"></p>
+      </div>
+      <div id="who-pick" class="picker hidden">
+        <div class="tools"><input id="filter" placeholder="ابحث بالاسم" aria-label="ابحث بالاسم" autocomplete="off"><span class="count" id="pick-count">0 مختار</span></div>
+        <div class="plist" id="plist"></div>
+      </div>
+    </section>
+
     <section class="step hidden" id="step-who">
-      <h2><span class="n">٣</span>الطلاب المشاركون</h2>
+      <h2><span class="n">٤</span>الطلاب المشاركون</h2>
       <div id="sp"></div>
     </section>
 
     <section class="step hidden" id="step-slot">
-      <h2><span class="n">٤</span>الموعد</h2>
+      <h2><span class="n">٥</span>الموعد</h2>
       <div class="weeks" id="weeks"></div>
       <div class="board" id="board"></div>
       <p class="note">القاعة متاحة في جميع الحصص: سبع حصص يومي الأحد والاثنين، وست حصص بقية الأيام.</p>
@@ -351,7 +377,8 @@ const SPECS = [
   { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
   { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
   { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
-  { name:"الإدارة والإرشاد", teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","أمين المصادر","المساعد الإداري"] }
+  { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","أمين المصادر","المساعد الإداري"] },
+  { name:"المشرفون التربويون", admin:true, teachers:["مشرف العلوم","مشرف الرياضيات","مشرف اللغة العربية","مشرف التربية الإسلامية","مشرف الاجتماعيات","مشرف اللغة الإنجليزية"] }
 ];
 
 /* الأسابيع 6 إلى 17. إجازة الخريف (22–26 نوفمبر) ليست أسبوعًا دراسيًا */
@@ -381,7 +408,7 @@ const periodLabel = (p, span) => span===2 ? `الحصتان ${PERIOD_NAMES[p-1]}
 let bookings = [];
 let session = null;
 try { session = JSON.parse(sessionStorage.getItem("train-session")||"null"); } catch(e){}
-const state = { teacher:"", span:0, week:defaultWeek(), date:null, period:null, allWeek:defaultWeek() };
+const state = { teacher:"", span:0, mode:"", specs:[], picked:new Set(), week:defaultWeek(), date:null, period:null, allWeek:defaultWeek() };
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const busy = (list, date, p) => list.some(b=>b.date===date && p>=+b.period && p<+b.period+(+b.span||1));
@@ -440,18 +467,59 @@ function fillTeachers(){
     `<optgroup label="${esc(s.name)}">${s.teachers.map(t=>`<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
 }
 let picker = null;
+const SPEC_ONLY = SPECS.filter(s=>!s.admin);
+const specList = () => SPEC_ONLY.map(s=>s.name).filter(n=>state.specs.includes(n));
+function staffText(){
+  if (state.mode==="spec") return state.specs.length ? `معلمو ${specList().join("، ")}` : "";
+  if (state.mode==="pick") return [...state.picked].join("، ");
+  return "";
+}
+function staffReady(){ return state.mode==="spec" ? state.specs.length>0 : state.mode==="pick" ? state.picked.size>0 : state.mode==="none"; }
+function staffSummary(){
+  if (state.mode==="spec") return state.specs.length<=2 ? `معلمو ${specList().join(" و")}` : `معلمو ${state.specs.length} تخصصات`;
+  if (state.mode==="pick") return `${state.picked.size} من المعلمين`;
+  return "";
+}
+/* الحضور = المعلمون + الطلاب، ويُحفظ في عمود participants */
+function attendeesText(){ return [staffText(), picker ? picker.labeled() : ""].filter(Boolean).join(" | "); }
+function fillStaff(){
+  $("spec-btns").innerHTML = SPEC_ONLY.map(s=>`<button type="button" class="sp-club" data-spec="${esc(s.name)}" aria-pressed="false">${esc(s.name)}</button>`).join("");
+  $("plist").innerHTML = SPECS.map(s=>`<div class="pgroup"><h3>${esc(s.name)}</h3>${s.teachers.map(t=>
+    `<label data-name="${esc(t)}"><input type="checkbox" value="${esc(t)}">${esc(t)}</label>`).join("")}</div>`).join("");
+}
+function filterList(){
+  const q = $("filter").value.trim();
+  document.querySelectorAll("#plist .pgroup").forEach(g=>{
+    let any=false;
+    g.querySelectorAll("label").forEach(l=>{ const m = !q || l.dataset.name.includes(q); l.classList.toggle("hidden", !m); any = any || m; });
+    g.classList.toggle("hidden", !any);
+  });
+}
+function resetStaff(){
+  state.mode=""; state.specs=[]; state.picked.clear(); $("filter").value="";
+  document.querySelectorAll("#plist input").forEach(i=>i.checked=false); filterList();
+}
 function renderNew(){
-  const hasName = !!state.teacher, hasSpan = hasName && !!state.span, hasWho = hasSpan && !!picker && picker.ready();
+  const hasName = !!state.teacher, hasSpan = hasName && !!state.span, hasStaff = hasSpan && staffReady(), hasWho = hasStaff && !!picker && picker.ready();
   $("step-span").classList.toggle("hidden", !hasName);
-  document.querySelectorAll(".span").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.span===state.span));
-  $("step-who").classList.toggle("hidden", !hasSpan);
+  document.querySelectorAll("[data-span]").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.span===state.span));
+  $("step-staff").classList.toggle("hidden", !hasSpan);
+  document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===state.mode));
+  $("who-spec").classList.toggle("hidden", state.mode!=="spec");
+  $("who-pick").classList.toggle("hidden", state.mode!=="pick");
+  document.querySelectorAll("[data-spec]").forEach(b=>b.setAttribute("aria-pressed", state.specs.includes(b.dataset.spec)));
+  const nT = SPEC_ONLY.filter(s=>state.specs.includes(s.name)).reduce((a,s)=>a+s.teachers.length,0);
+  $("spec-count").textContent = state.specs.length ? `${state.specs.length} تخصص — ${nT} معلم` : "اختر تخصصًا أو أكثر";
+  $("pick-count").textContent = `${state.picked.size} مختار`;
+  $("step-who").classList.toggle("hidden", !hasStaff);
   $("step-slot").classList.toggle("hidden", !hasWho);
   if (hasWho){ renderWeeks("weeks", state.week); renderBoard(); }
   const ready = hasWho && state.date && state.period;
   $("step-send").classList.toggle("hidden", !ready);
   if (ready){
     const d = DAYS.find(x=>x.date===state.date);
-    $("summary").textContent = `${state.teacher}${picker.summary() ? " — " + picker.summary() : ""} — ${d.day} ${fmtG.format(d.dt)}، ${periodLabel(state.period, state.span)}`;
+    const who = [staffSummary(), picker.summary()].filter(Boolean).join(" + ");
+    $("summary").textContent = `${state.teacher}${who ? " — " + who : ""} — ${d.day} ${fmtG.format(d.dt)}، ${periodLabel(state.period, state.span)}`;
   }
 }
 function renderWeeks(id, active){
@@ -518,6 +586,11 @@ document.addEventListener("click", async e=>{
     $("view-new").classList.toggle("hidden", t.dataset.view!=="new");
     $("view-all").classList.toggle("hidden", t.dataset.view!=="all");
     load();
+  } else if (t.dataset.mode){
+    state.mode=t.dataset.mode; renderNew();
+  } else if (t.dataset.spec){
+    const i = state.specs.indexOf(t.dataset.spec);
+    i<0 ? state.specs.push(t.dataset.spec) : state.specs.splice(i,1); renderNew();
   } else if (t.dataset.span){
     state.span=+t.dataset.span; state.date=null; state.period=null; renderNew();
   } else if (t.dataset.week){
@@ -529,9 +602,9 @@ document.addEventListener("click", async e=>{
   } else if (t.id==="submit"){
     t.disabled=true; t.textContent="جاري الحجز…";
     try{
-      const r = await api("POST", { action:"book", teacher:state.teacher, date:state.date, period:state.period, span:state.span, purpose:$("purpose").value.trim(), participants:picker.labeled() });
+      const r = await api("POST", { action:"book", teacher:state.teacher, date:state.date, period:state.period, span:state.span, purpose:$("purpose").value.trim(), participants:attendeesText() });
       take(r);
-      if (r.ok){ toast("تم الحجز"); $("purpose").value=""; picker.reset(); }
+      if (r.ok){ toast("تم الحجز"); $("purpose").value=""; picker.reset(); resetStaff(); }
       else toast(r.error, true);
       state.date=null; state.period=null;
     } catch(err){ toast("تعذّر الحجز. تأكد من الاتصال وحاول مرة أخرى", true); }
@@ -593,6 +666,13 @@ document.addEventListener("click", async e=>{
 });
 $("teacher").addEventListener("change", e=>{ state.teacher=e.target.value; renderNew(); });
 picker = StudentPicker($("sp"), { onChange: renderNew, none:true, noneHint:"دورة أو لقاء للمعلمين" });
+fillStaff();
+$("plist").addEventListener("change", e=>{
+  if (e.target.type!=="checkbox") return;
+  e.target.checked ? state.picked.add(e.target.value) : state.picked.delete(e.target.value);
+  renderNew();
+});
+$("filter").addEventListener("input", filterList);
 
 fillTeachers();
 load();
