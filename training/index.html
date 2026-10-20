@@ -374,7 +374,7 @@ const SPECS = [
   { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
   { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
   { name:"الإدارة والإرشاد", admin:true, teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","أمين المصادر","المساعد الإداري"] },
-  { name:"المشرفون التربويون", admin:true, teachers:["مشرف العلوم","مشرف الرياضيات","مشرف اللغة العربية","مشرف التربية الإسلامية","مشرف الاجتماعيات","مشرف اللغة الإنجليزية"] }
+  { name:"الفريق الإشرافي", team:true, teachers:["مشرف العلوم","مشرف الرياضيات","مشرف اللغة العربية","مشرف التربية الإسلامية","مشرف الاجتماعيات","مشرف اللغة الإنجليزية"] }
 ];
 
 /* الأسابيع 6 إلى 17. إجازة الخريف (22–26 نوفمبر) ليست أسبوعًا دراسيًا */
@@ -465,21 +465,25 @@ function fillTeachers(){
 let picker = null;
 /* ===== حضور المعلمين: تخصصات كاملة + أسماء محددة (إداريون ومشرفون ومعلمون) معًا ===== */
 const STAFF_SPECS = SPECS.filter(s=>!s.admin);
-const STAFF_ORDER = [...SPECS.filter(s=>s.admin), ...STAFF_SPECS];
+const STAFF_ORDER = [...SPECS.filter(s=>s.admin || s.team), ...STAFF_SPECS.filter(s=>!s.team)];
 const staff = { specs:[], picked:new Set(), none:false };
-const staffSpecList = () => STAFF_SPECS.map(s=>s.name).filter(n=>staff.specs.includes(n));
+/* التخصصات الدراسية تُكتب "معلمو …"، والفريق الإشرافي يُكتب باسمه */
+const staffSpecList = () => STAFF_SPECS.filter(s=>!s.team).map(s=>s.name).filter(n=>staff.specs.includes(n));
+const staffTeamList = () => STAFF_SPECS.filter(s=>s.team).map(s=>s.name).filter(n=>staff.specs.includes(n));
 function staffCovered(){ const c = new Set(); STAFF_SPECS.forEach(s=>{ if (staff.specs.includes(s.name)) s.teachers.forEach(t=>c.add(t)); }); return c; }
 function staffExtra(){ const c = staffCovered(); return [...staff.picked].filter(n=>!c.has(n)); }
 function staffText(){
   const parts = [];
-  if (staff.specs.length) parts.push(`معلمو ${staffSpecList().join("، ")}`);
+  if (staffSpecList().length) parts.push(`معلمو ${staffSpecList().join("، ")}`);
+  if (staffTeamList().length) parts.push(staffTeamList().join("، "));
   const e = staffExtra(); if (e.length) parts.push(e.join("، "));
   return parts.join("؛ ");
 }
 function staffReady(){ return staff.none || staff.specs.length > 0 || staffExtra().length > 0; }
 function staffSummary(){
-  const p = [], n = staff.specs.length, e = staffExtra();
+  const p = [], n = staffSpecList().length, e = staffExtra();
   if (n) p.push(n <= 2 ? `معلمو ${staffSpecList().join(" و")}` : `معلمو ${n} تخصصات`);
+  if (staffTeamList().length) p.push(staffTeamList().join(" و"));
   if (e.length) p.push(e.length <= 2 ? e.join(" و") : `${e.length} بالاسم`);
   return p.join(" + ");
 }
