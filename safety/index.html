@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07277A">
+<title>بلاغات السلامة والصيانة — بوابة واعد الدفي</title>
+<link rel="icon" href="../waed/rc-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#07277A; --royal:#2834FF; --violet:#8044FF; --green:#22CC77; --sky:#4FC3FF;
+  --ink:#0E1A3A; --ink-2:#47526E; --muted:#7A849C; --line:#E3E7F0; --paper:#F4F6FB; --card:#FFFFFF; --chip:#EEF1FB;
+  --c:#C2410C; --c-soft:#FDEEE5;
+  --open:#B42318; --open-bg:#FEE4E2; --iso:#B54708; --iso-bg:#FEF0C7; --fix:#067647; --fix-bg:#DCFAE6;
+  --shadow:0 1px 2px rgba(14,26,58,.05),0 8px 24px rgba(14,26,58,.06); color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#EAF0FF; --ink-2:#B3BDD6; --muted:#8792AD; --line:#26314A; --paper:#0B1222; --card:#131C31; --chip:#1B2640;
+    --c:#FB923C; --c-soft:#3A2414; --open:#FDA29B; --open-bg:#3B1614; --iso:#FEC84B; --iso-bg:#3A2A0E; --fix:#75E0A7; --fix-bg:#0E3323;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#EAF0FF; --ink-2:#B3BDD6; --muted:#8792AD; --line:#26314A; --paper:#0B1222; --card:#131C31; --chip:#1B2640;
+  --c:#FB923C; --c-soft:#3A2414; --open:#FDA29B; --open-bg:#3B1614; --iso:#FEC84B; --iso-bg:#3A2A0E; --fix:#75E0A7; --fix-bg:#0E3323;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Arabic","Tajawal",Tahoma,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:0 18px}
+.hidden{display:none!important}
+button{font:inherit;cursor:pointer}
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--card) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:12px;height:64px}
+.topbar img{height:36px;width:auto}
+.topbar .name b{display:block;font-size:1.05rem;font-weight:700;line-height:1.2}
+.topbar .name a{font-size:.8rem;color:var(--muted);text-decoration:none}
+.topbar .name a:hover{color:var(--royal)}
+.ghost{margin-inline-start:auto;background:var(--card);border:1px solid var(--line);color:var(--ink-2);border-radius:10px;padding:7px 12px;font-size:.88rem;font-weight:500}
+.hero{margin-top:18px;border-radius:24px;color:#fff;background:linear-gradient(135deg,#7A1D0B 0%,#B3330F 50%,#E0661A 100%);padding:24px 26px}
+.hero h1{margin:0;font-size:1.6rem;font-weight:700}
+.hero p{margin:4px 0 0;color:#FFE2CF;font-size:.95rem}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;box-shadow:var(--shadow)}
+.kpi .k{font-size:.8rem;color:var(--ink-2);font-weight:500}
+.kpi .v{font-size:1.6rem;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.75rem;color:var(--muted)}
+.tabs{display:flex;gap:6px;margin:22px 0 14px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:600;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--c);border-color:var(--c)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;box-shadow:var(--shadow);margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:1.02rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.card h2 .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;font-size:.85rem}
+label.f{display:block;font-weight:600;font-size:.9rem;margin:12px 0 6px}
+label.f small{font-weight:400;color:var(--muted)}
+select,input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px}
+textarea{resize:vertical;min-height:96px}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--c);box-shadow:0 0 0 3px var(--c-soft)}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.opt{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:9px 10px;font-weight:600;font-size:.9rem;text-align:center}
+.opt[aria-pressed="true"]{border-color:var(--c);background:var(--c-soft);color:var(--c)}
+.sev{grid-template-columns:repeat(3,1fr)}
+.opt.sev-low[aria-pressed="true"]{border-color:var(--fix);background:var(--fix-bg);color:var(--fix)}
+.opt.sev-mid[aria-pressed="true"]{border-color:var(--iso);background:var(--iso-bg);color:var(--iso)}
+.opt.sev-high[aria-pressed="true"]{border-color:var(--open);background:var(--open-bg);color:var(--open)}
+.opt small{display:block;font-weight:400;font-size:.75rem;opacity:.85}
+.photo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.photo label.btn{display:inline-flex;align-items:center;gap:8px;border:1.5px dashed var(--line);border-radius:12px;padding:10px 14px;color:var(--ink-2);font-weight:600;cursor:pointer}
+.photo input{display:none}
+.photo img{width:96px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.primary{width:100%;background:var(--c);color:#fff;border:0;border-radius:14px;padding:13px;font-weight:700;font-size:1.02rem;margin-top:6px}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.note{color:var(--muted);font-size:.82rem;margin:8px 0 0}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+.chipf{border:1px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:99px;padding:5px 12px;font-size:.85rem;font-weight:600}
+.chipf[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.filters .print{margin-inline-start:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;font-size:.85rem;font-weight:600}
+.rep{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.rep .top{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.rep .id{font-weight:700;font-size:.85rem;color:var(--muted);direction:ltr}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:2px 10px;font-size:.78rem;font-weight:700}
+.st-open{background:var(--open-bg);color:var(--open)} .st-isolated{background:var(--iso-bg);color:var(--iso)} .st-fixed{background:var(--fix-bg);color:var(--fix)}
+.sv-low{background:var(--fix-bg);color:var(--fix)} .sv-mid{background:var(--iso-bg);color:var(--iso)} .sv-high{background:var(--open-bg);color:var(--open)}
+.rep h3{margin:8px 0 2px;font-size:1rem;font-weight:700}
+.rep .d{font-size:.92rem;color:var(--ink-2);margin:2px 0}
+.rep .meta{font-size:.8rem;color:var(--muted)}
+.rep .body{display:flex;gap:12px;align-items:flex-start}
+.rep .body img{width:120px;height:90px;object-fit:cover;border-radius:12px;border:1px solid var(--line);flex:none}
+.tl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:4px;font-size:.82rem}
+.tl li{display:flex;gap:8px;color:var(--ink-2)}
+.dt{white-space:nowrap;unicode-bidi:isolate}
+.tl li i{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none;background:var(--line)}
+.tl li.on i{background:var(--c)}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.acts input{flex:1 1 200px;padding:7px 10px;border-radius:10px;font-size:.88rem}
+.act{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:6px 12px;font-size:.85rem;font-weight:600}
+.act.iso{border-color:var(--iso);color:var(--iso)} .act.fix{border-color:var(--fix);color:var(--fix)} .act.del{color:var(--open)}
+.empty{text-align:center;color:var(--muted);padding:26px;border:1px dashed var(--line);border-radius:16px;background:var(--card)}
+.session{background:var(--c-soft);border-radius:14px;padding:10px 14px;margin-top:14px;font-size:.88rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.session .sb{margin-inline-start:auto;display:flex;gap:6px;flex-wrap:wrap}
+.session button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:5px 10px;font-size:.82rem}
+dialog{border:0;border-radius:20px;padding:20px;width:min(92vw,380px);background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(7,15,40,.45)}
+dialog h2{margin:0 0 6px;font-size:1.1rem}
+dialog .row{display:flex;gap:8px;margin-top:14px}
+dialog .row button{flex:1;border-radius:12px;padding:10px;font-weight:700;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+dialog .row .ok{background:var(--c);color:#fff;border-color:var(--c)}
+.toast{position:fixed;inset-inline:16px;bottom:22px;margin:auto;max-width:420px;background:var(--ink);color:var(--paper);padding:12px 16px;border-radius:14px;text-align:center;font-weight:600;transform:translateY(140%);transition:transform .25s;z-index:60}
+.toast.show{transform:none}
+.toast.err{background:var(--open)}
+footer{margin-top:40px;border-top:1px solid var(--line);padding:20px;display:flex;justify-content:center;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;font-family:"Segoe UI",Tahoma,sans-serif}
+footer a{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);color:var(--royal)}
+#print{display:none}
+@media (max-width:640px){ .kpis{grid-template-columns:1fr 1fr} .sev{grid-template-columns:1fr 1fr 1fr} .rep .body{flex-direction:column} .rep .body img{width:100%;height:180px} }
+
+/* ===== الطباعة: التقرير الرسمي ===== */
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;color:#000;font-size:12pt}
+  body > *:not(#print){display:none!important}
+  #print{display:block!important}
+  .pr-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #07277A;padding-bottom:8px;margin-bottom:14px}
+  .pr-head img{height:52px}
+  .pr-head h1{font-size:17pt;margin:0;color:#07277A}
+  .pr-head p{margin:2px 0 0;font-size:10pt;color:#444}
+  table.pr{width:100%;border-collapse:collapse;margin:8px 0}
+  table.pr th,table.pr td{border:1px solid #999;padding:6px 8px;text-align:start;vertical-align:top;font-size:10.5pt}
+  table.pr th{background:#EEF1FB;width:26%}
+  table.list td{font-size:9.5pt}
+  .dt{white-space:nowrap}
+  table.list th{width:auto}
+  .pr-photo{max-width:100%;max-height:300px;border:1px solid #999;border-radius:6px;margin-top:6px}
+  .sign{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;text-align:center;font-size:10.5pt}
+  .sign div{border-top:1px solid #000;padding-top:6px}
+  h2.pr-sec{font-size:12.5pt;color:#07277A;margin:14px 0 4px}
+  .pr-sum{display:flex;gap:10px;margin:8px 0}
+  .pr-sum div{flex:1;border:1px solid #999;border-radius:6px;padding:6px;text-align:center;font-size:10pt}
+  .pr-sum b{display:block;font-size:15pt}
+  .pr-foot{margin-top:18px;font-size:9pt;color:#555;text-align:center}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <img src="../waed/rc-logo.png" alt="الهيئة الملكية للجبيل وينبع" width="48" height="36">
+    <div class="name"><b>بلاغات السلامة والصيانة</b><a href="../waed/">بوابة واعد الدفي — ثانوية الدفي</a></div>
+    <button class="ghost" id="open-login">دخول المسؤولين</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>لاحظت خطرًا أو عطلًا؟ بلّغ عنه الآن</h1>
+    <p>يصل بلاغك لمسؤول الأمن والسلامة فورًا، ويُتابَع حتى عزل الموقع ومعالجته.</p>
+  </div>
+  <div class="session hidden" id="session"></div>
+
+  <div class="kpis" aria-live="polite">
+    <div class="kpi"><div class="k">إجمالي البلاغات</div><div class="v" id="k-all">—</div><div class="s">منذ بداية الفصل</div></div>
+    <div class="kpi"><div class="k">مفتوحة</div><div class="v" id="k-open">—</div><div class="s">بانتظار الإجراء</div></div>
+    <div class="kpi"><div class="k">تمت معالجتها</div><div class="v" id="k-fixed">—</div><div class="s" id="k-fixed-s">من البلاغات</div></div>
+    <div class="kpi"><div class="k">متوسط زمن المعالجة</div><div class="v" id="k-time">—</div><div class="s">من البلاغ حتى الإغلاق</div></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-view="new">بلاغ جديد</button>
+    <button class="tab" role="tab" aria-selected="false" data-view="log">سجل البلاغات</button>
+  </div>
+
+  <div id="view-new">
+    <section class="card">
+      <h2><span class="n">١</span>المبلّغ</h2>
+      <select id="reporter" aria-label="اسم المبلّغ"></select>
+    </section>
+    <section class="card">
+      <h2><span class="n">٢</span>موقع الخطر</h2>
+      <select id="location" aria-label="الموقع"></select>
+      <label class="f" for="place">تحديد المكان بدقة <small>(اختياري — مثال: ثاني ثانوي 4، الدور الثاني بجانب الدرج)</small></label>
+      <input id="place" maxlength="120" autocomplete="off">
+    </section>
+    <section class="card">
+      <h2><span class="n">٣</span>نوع الخطر</h2>
+      <div class="opts" id="types" role="group" aria-label="نوع الخطر"></div>
+      <input id="type-other" class="hidden" maxlength="60" placeholder="اكتب نوع الخطر" style="margin-top:8px">
+    </section>
+    <section class="card">
+      <h2><span class="n">٤</span>درجة الخطورة</h2>
+      <div class="opts sev" role="group" aria-label="درجة الخطورة">
+        <button type="button" class="opt sev-low" data-sev="low" aria-pressed="false">منخفضة<small>لا خطر مباشر</small></button>
+        <button type="button" class="opt sev-mid" data-sev="mid" aria-pressed="false">متوسطة<small>قد تسبب إصابة</small></button>
+        <button type="button" class="opt sev-high" data-sev="high" aria-pressed="false">عالية<small>خطر مباشر — يُعزل فورًا</small></button>
+      </div>
+    </section>
+    <section class="card">
+      <h2><span class="n">٥</span>الوصف والصورة</h2>
+      <textarea id="desc" maxlength="600" placeholder="صف الخطر باختصار: ماذا رأيت؟ وهل يوجد طلاب قريبون منه؟" aria-label="وصف الخطر"></textarea>
+      <div class="photo" style="margin-top:10px">
+        <label class="btn" for="photo">📷 إرفاق صورة <small style="font-weight:400">(اختياري)</small></label>
+        <input type="file" id="photo" accept="image/*" capture="environment">
+        <img id="photo-prev" class="hidden" alt="معاينة الصورة">
+        <button type="button" class="act hidden" id="photo-del">إزالة الصورة</button>
+      </div>
+      <button class="primary" id="submit" disabled>إرسال البلاغ</button>
+      <p class="note">للحالات الطارئة التي تهدد السلامة مباشرة: أبعد الطلاب عن المكان وأبلغ إدارة المدرسة فورًا، ثم سجّل البلاغ هنا للتوثيق.</p>
+    </section>
+  </div>
+
+  <div id="view-log" class="hidden">
+    <div class="filters" role="group" aria-label="تصفية البلاغات">
+      <button class="chipf" data-f="all" aria-pressed="true">الكل</button>
+      <button class="chipf" data-f="open" aria-pressed="false">مفتوحة</button>
+      <button class="chipf" data-f="isolated" aria-pressed="false">تم عزل الموقع</button>
+      <button class="chipf" data-f="fixed" aria-pressed="false">تمت المعالجة</button>
+      <button class="print" id="print-all">🖨️ التقرير الشامل</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</main>
+
+<footer dir="ltr">
+  <span>Designed &amp; developed by Mulhim Almulhim</span>
+  <a href="mailto:mulhimm@rcjy.edu.sa" aria-label="راسلني على البريد الرسمي"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+</footer>
+
+<dialog id="login-dlg">
+  <h2>دخول المسؤولين</h2>
+  <label class="f" for="login-user">الحساب</label>
+  <select id="login-user"><option>أدمن</option><option>مسؤول الأمن والسلامة</option><option>مدير المدرسة</option></select>
+  <label class="f" for="login-pin">الرقم السري</label>
+  <input id="login-pin" type="password" inputmode="numeric" autocomplete="current-password">
+  <div class="row"><button class="ok" id="do-login">دخول</button><button id="close-login">إلغاء</button></div>
+</dialog>
+<dialog id="pin-dlg">
+  <h2>تغيير الرقم السري</h2>
+  <label class="f" for="new-pin">الرقم السري الجديد (4 إلى 10 أرقام)</label>
+  <input id="new-pin" type="password" inputmode="numeric" autocomplete="new-password">
+  <div class="row"><button class="ok" id="do-pin">حفظ</button><button id="close-pin">إلغاء</button></div>
+</dialog>
+<dialog id="mail-dlg">
+  <h2>تنبيه البريد الإلكتروني</h2>
+  <p class="note" style="margin:0">يصلك بريد عند كل بلاغ جديد. يمكنك كتابة أكثر من بريد بينها فاصلة، واتركه فارغًا لإيقاف التنبيه.</p>
+  <label class="f" for="mail-to">البريد الإلكتروني</label>
+  <input id="mail-to" dir="ltr" inputmode="email" autocomplete="email" placeholder="name@rcjy.edu.sa">
+  <div class="row"><button class="ok" id="do-mail">حفظ</button><button id="close-mail">إلغاء</button></div>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+<div id="print"></div>
+
+<script>
+/* رابط تطبيق الويب من Apps Script — إذا كان فارغًا تعمل الصفحة تجريبيًا في المتصفح */
+const API_URL = "https://script.google.com/macros/s/AKfycbxhvV3wqZB0yqorr0zur5LgLeuJj04fk2mTSO_XXv-nou4lUEyh2OcIDiGJmWikXdY0/exec";
+
+const SPECS = [
+  { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
+  { name:"أحياء", teachers:["نايف بن حبيب بوخمسين","سالم بن علي آل عمر","مازن بن أحمد سليماني","سعد بن عبدالرحمن الغامدي"] },
+  { name:"رياضيات", teachers:["عبدالكريم بن لافي الرشيدي","أحمد بن علي الزهراني","صالح بن عايض الحربي","سعد بن عيد الأحمري","عمر بن محمد الغامدي","علي بن حاظر الزهراني","عادل بن رزيق الصبحي"] },
+  { name:"حاسب آلي", teachers:["خالد بن عبدالله الشمراني","فيصل بن عبدالله الكلثم","علي بن بداح الدوسري"] },
+  { name:"اجتماعيات", teachers:["سعود بن خالد النفيعي","سلمان بن عايض العتيبي","عبدالله بن صالح الجديع"] },
+  { name:"تربية فنية", teachers:["أنور بن محمد آل حميد"] },
+  { name:"فيزياء", teachers:["هشام بن سعيد القحطاني","عبدالله عبدالهادي القحطاني","محمد بن سليمان العميم","الوليد بن مطلق البقمي"] },
+  { name:"لغة عربية", teachers:["عبدالله بن أسعد الفيفي","علي بن سفر الشهراني","خالد بن حسن دوشي","زهير بن إبراهيم الغامدي","عبدالرحمن بن حسن القراش","سلطان بن سليمان العتيبي","شامان بن هليل العنزي"] },
+  { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
+  { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
+  { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
+  { name:"الإدارة والإرشاد", teachers:["مدير المدرسة","وكيل شؤون المعلمين","وكيل شؤون الطلاب","المرشد الطلابي","الموجه الطلابي","رائد النشاط","المشرف الصحي","مسؤول الأمن والسلامة","أمين المصادر","المساعد الإداري","محضر المختبر"] }
+];
+const LOCATIONS = [
+  ["المباني التعليمية", ["الفصول الدراسية","الممرات والسلالم","مختبر الكيمياء","مختبر الأحياء","مختبر الفيزياء","معمل الحاسب"]],
+  ["المرافق", ["مركز مصادر التعلم","المركز الترفيهي","قاعة التدريب","قاعة الاجتماعات","الأستوديو المدرسي","مركز الاختبارات المحوسبة","المسرح","المصلى","المقصف","دورات المياه","العيادة المدرسية"]],
+  ["الساحات والخارج", ["الساحة","الملاعب والصالة الرياضية","المواقف والبوابات","سور المدرسة"]],
+  ["أخرى", ["الإدارة والمكاتب","مكان آخر"]]
+];
+const TYPES = ["كهرباء وتمديدات","تسرب مياه","زجاج مكسور","أثاث أو مقاعد تالفة","أرضيات زلقة أو متكسرة","أبواب ونوافذ","تكييف وتهوية","معدات السلامة (طفايات، إنذار، مخارج)","مواد كيميائية أو أدوات مختبر","إنارة","أخرى"];
+const SEV = { low:"منخفضة", mid:"متوسطة", high:"عالية" };
+const ST = { open:"مفتوح", isolated:"تم عزل الموقع", fixed:"تمت المعالجة" };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dt = v => v ? `<bdi dir="ltr" class="dt">${esc(v)}</bdi>` : "";
+const nf = n => new Intl.NumberFormat("ar-SA-u-nu-latn").format(n);
+const photoUrl = id => id.startsWith("data:") ? id : `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1000`;
+let reports = [], session = null, filter = "all", photoData = "";
+const state = { type:"", sev:"" };
+try { session = JSON.parse(sessionStorage.getItem("safety-session")) || null; } catch(e){}
+
+/* ===== الاتصال ===== */
+async function api(method, body){
+  if (!API_URL) return demoApi(method, body);
+  const res = method === "GET" ? await fetch(API_URL + "?t=" + Date.now()) : await fetch(API_URL, { method:"POST", body:JSON.stringify(body) });
+  return res.json();
+}
+const DEMO_ACC = { "أدمن":"1111", "مسؤول الأمن والسلامة":"2222", "مدير المدرسة":"4444" };
+function demoApi(method, body){
+  let db = { reports:[] };
+  try { db = JSON.parse(localStorage.getItem("safety-demo")) || db; } catch(e){}
+  const save = () => { try { localStorage.setItem("safety-demo", JSON.stringify(db)); } catch(e){} };
+  const out = x => ({ ok:true, reports:db.reports, ...x });
+  const now = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16).replace("T"," "); };
+  if (method === "GET") return out();
+  const authed = DEMO_ACC[body.user] && DEMO_ACC[body.user] === body.pin;
+  if (body.action === "login") return authed ? { ok:true, name:body.user, notify:"" } : { ok:false, error:"الرقم السري غير صحيح" };
+  if (body.action === "changePin"){ if (!authed) return { ok:false, error:"الرقم السري الحالي غير صحيح" }; DEMO_ACC[body.user] = body.newPin; return { ok:true }; }
+  if (body.action === "setEmail") return authed ? { ok:true, notify:body.email } : { ok:false, error:"سجّل الدخول من جديد" };
+  if (body.action === "report"){
+    const id = "S" + Math.random().toString(36).slice(2,8).toUpperCase(), c = now();
+    db.reports.push({ id, created:c, date:c.slice(0,10), reporter:body.reporter, location:body.location, place:body.place, type:body.type, severity:body.severity, description:body.description, photo:body.photo||"", status:"open", isolatedAt:"", isolatedBy:"", isolatedNote:"", fixedAt:"", fixedBy:"", fixedNote:"" });
+    save(); return out({ id });
+  }
+  if (body.action === "update" || body.action === "delete"){
+    if (!authed) return out({ ok:false, error:"سجّل الدخول من جديد" });
+    const r = db.reports.find(x => x.id === body.id); if (!r) return out({ ok:false, error:"البلاغ غير موجود" });
+    if (body.action === "delete") db.reports = db.reports.filter(x => x !== r);
+    else if (body.status === "isolated") Object.assign(r, { status:"isolated", isolatedAt:now(), isolatedBy:body.user, isolatedNote:body.note||"" });
+    else if (body.status === "fixed"){ if (!r.isolatedAt) Object.assign(r, { isolatedAt:now(), isolatedBy:body.user, isolatedNote:"عُزل الموقع وعولج في نفس الإجراء" }); Object.assign(r, { status:"fixed", fixedAt:now(), fixedBy:body.user, fixedNote:body.note||"" }); }
+    else if (body.status === "open") Object.assign(r, { status:"open", isolatedAt:"", isolatedBy:"", isolatedNote:"", fixedAt:"", fixedBy:"", fixedNote:"" });
+    save(); return out();
+  }
+  return { ok:false, error:"إجراء غير معروف" };
+}
+function take(r){ if (r && r.reports) reports = r.reports; }
+async function load(){
+  try { take(await api("GET")); } catch(e){ toast("تعذّر تحميل البلاغات. تأكد من الاتصال ثم حدّث الصفحة", true); }
+  renderAll();
+}
+
+/* ===== العرض ===== */
+function fill(){
+  $("reporter").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s => `<optgroup label="${esc(s.name)}">${s.teachers.map(t => `<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
+  $("location").innerHTML = `<option value="">اختر الموقع</option>` + LOCATIONS.map(g => `<optgroup label="${esc(g[0])}">${g[1].map(t => `<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
+  $("types").innerHTML = TYPES.map(t => `<button type="button" class="opt" data-type="${esc(t)}" aria-pressed="false">${esc(t)}</button>`).join("");
+}
+const typeVal = () => state.type === "أخرى" ? $("type-other").value.trim() : state.type;
+function formReady(){ return $("reporter").value && $("location").value && typeVal() && state.sev && $("desc").value.trim().length >= 5; }
+function renderForm(){
+  document.querySelectorAll("[data-type]").forEach(b => b.setAttribute("aria-pressed", b.dataset.type === state.type));
+  document.querySelectorAll("[data-sev]").forEach(b => b.setAttribute("aria-pressed", b.dataset.sev === state.sev));
+  $("type-other").classList.toggle("hidden", state.type !== "أخرى");
+  $("photo-prev").classList.toggle("hidden", !photoData); $("photo-del").classList.toggle("hidden", !photoData);
+  if (photoData) $("photo-prev").src = photoData;
+  $("submit").disabled = !formReady();
+}
+function hours(a, b){ const t = s => Date.parse(s.replace(" ", "T") + ":00+03:00"); return (t(b) - t(a)) / 3600000; }
+function fmtDur(h){ if (!(h >= 0)) return "—"; if (h < 1) return "أقل من ساعة"; if (h < 48) return nf(Math.round(h)) + " ساعة"; return nf(Math.round(h/24)) + " يوم"; }
+function renderKpis(){
+  const fixed = reports.filter(r => r.status === "fixed"), open = reports.filter(r => r.status !== "fixed");
+  $("k-all").textContent = nf(reports.length);
+  $("k-open").textContent = nf(open.length);
+  $("k-fixed").textContent = nf(fixed.length);
+  $("k-fixed-s").textContent = reports.length ? `${Math.round(fixed.length / reports.length * 100)}٪ من البلاغات` : "من البلاغات";
+  const ds = fixed.map(r => hours(r.created, r.fixedAt)).filter(h => h >= 0);
+  $("k-time").textContent = ds.length ? fmtDur(ds.reduce((a, b) => a + b, 0) / ds.length) : "—";
+}
+function timeline(r){
+  return `<ul class="tl">
+    <li class="on"><i></i><span>أُبلغ ${dt(r.created)} — ${esc(r.reporter)}</span></li>
+    <li class="${r.isolatedAt ? "on" : ""}"><i></i><span>${r.isolatedAt ? `عُزل الموقع ${dt(r.isolatedAt)} — ${esc(r.isolatedBy)}${r.isolatedNote ? `: ${esc(r.isolatedNote)}` : ""}` : "عزل الموقع: بانتظار الإجراء"}</span></li>
+    <li class="${r.fixedAt ? "on" : ""}"><i></i><span>${r.fixedAt ? `تمت المعالجة ${dt(r.fixedAt)} — ${esc(r.fixedBy)}${r.fixedNote ? `: ${esc(r.fixedNote)}` : ""}` : "المعالجة: بانتظار الإجراء"}</span></li>
+  </ul>`;
+}
+function renderList(){
+  document.querySelectorAll("[data-f]").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === filter));
+  const list = reports.filter(r => filter === "all" || r.status === filter).slice().sort((a, b) => b.created.localeCompare(a.created));
+  if (!list.length){ $("list").innerHTML = `<div class="empty">${reports.length ? "لا توجد بلاغات في هذا التصنيف." : "لا توجد بلاغات حتى الآن."}</div>`; return; }
+  $("list").innerHTML = list.map(r => `
+    <article class="rep">
+      <div class="top"><span class="id">${esc(r.id)}</span><span class="pill st-${esc(r.status)}">${esc(ST[r.status] || r.status)}</span><span class="pill sv-${esc(r.severity)}">خطورة ${esc(SEV[r.severity] || "")}</span></div>
+      <div class="body">
+        <div style="flex:1;min-width:0">
+          <h3>${esc(r.type)} — ${esc(r.location)}${r.place ? ` <span class="meta">(${esc(r.place)})</span>` : ""}</h3>
+          <p class="d">${esc(r.description)}</p>
+          ${timeline(r)}
+        </div>
+        ${r.photo ? `<a href="${r.photo.startsWith("data:") ? "#" : "https://drive.google.com/file/d/" + encodeURIComponent(r.photo) + "/view"}" target="_blank" rel="noopener"><img src="${photoUrl(r.photo)}" alt="صورة البلاغ" loading="lazy"></a>` : ""}
+      </div>
+      <div class="acts">
+        ${session && r.status !== "fixed" ? `<input data-note="${esc(r.id)}" placeholder="ملاحظة الإجراء (اختياري)" maxlength="300">` : ""}
+        ${session && r.status === "open" ? `<button class="act iso" data-st="isolated" data-id="${esc(r.id)}">تم عزل الموقع</button>` : ""}
+        ${session && r.status !== "fixed" ? `<button class="act fix" data-st="fixed" data-id="${esc(r.id)}">تمت المعالجة</button>` : ""}
+        ${session && r.status !== "open" ? `<button class="act" data-st="open" data-id="${esc(r.id)}">إعادة فتح</button>` : ""}
+        <button class="act" data-print="${esc(r.id)}">🖨️ طباعة التقرير</button>
+        ${session ? `<button class="act del" data-del="${esc(r.id)}">حذف</button>` : ""}
+      </div>
+    </article>`).join("");
+}
+function renderSession(){
+  $("open-login").classList.toggle("hidden", !!session);
+  $("session").classList.toggle("hidden", !session);
+  if (session) $("session").innerHTML = `<span>مرحبًا — ${esc(session.name)}. يمكنك تحديث حالة البلاغات وطباعة تقاريرها.</span><span class="sb"><button id="open-mail">تنبيه البريد</button><button id="open-pin">تغيير الرقم السري</button><button id="logout">خروج</button></span>`;
+}
+function renderAll(){ renderSession(); renderKpis(); renderForm(); renderList(); }
+
+/* ===== الطباعة ===== */
+const head = title => `<div class="pr-head"><div><h1>${title}</h1><p>ثانوية الدفي — مدارس الهيئة الملكية بالجبيل · بوابة واعد</p></div><img src="../waed/rc-logo.png" alt=""></div>`;
+const sign = `<div class="sign"><div>مسؤول الأمن والسلامة</div><div>وكيل المدرسة</div><div>مدير المدرسة</div></div>`;
+const printedAt = () => new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{dateStyle:"long", timeStyle:"short"}).format(new Date());
+function printOne(id){
+  const r = reports.find(x => x.id === id); if (!r) return;
+  $("print").innerHTML = head("تقرير إغلاق مكان الخطر") + `
+    <table class="pr">
+      <tr><th>رقم البلاغ</th><td>${esc(r.id)}</td></tr>
+      <tr><th>تاريخ ووقت البلاغ</th><td>${dt(r.created)}</td></tr>
+      <tr><th>المبلّغ</th><td>${esc(r.reporter)}</td></tr>
+      <tr><th>الموقع</th><td>${esc(r.location)}${r.place ? " — " + esc(r.place) : ""}</td></tr>
+      <tr><th>نوع الخطر</th><td>${esc(r.type)}</td></tr>
+      <tr><th>درجة الخطورة</th><td>${esc(SEV[r.severity] || "")}</td></tr>
+      <tr><th>وصف الخطر</th><td>${esc(r.description)}</td></tr>
+      <tr><th>الحالة الحالية</th><td>${esc(ST[r.status] || r.status)}</td></tr>
+    </table>
+    <h2 class="pr-sec">الإجراءات المتخذة</h2>
+    <table class="pr">
+      <tr><th>عزل موقع الخطر</th><td>${r.isolatedAt ? `${dt(r.isolatedAt)} — بواسطة ${esc(r.isolatedBy)}${r.isolatedNote ? "<br>" + esc(r.isolatedNote) : ""}` : "لم يُنفّذ بعد"}</td></tr>
+      <tr><th>المعالجة والإغلاق</th><td>${r.fixedAt ? `${dt(r.fixedAt)} — بواسطة ${esc(r.fixedBy)}${r.fixedNote ? "<br>" + esc(r.fixedNote) : ""}` : "لم يُنفّذ بعد"}</td></tr>
+      <tr><th>مدة الإغلاق</th><td>${r.fixedAt ? fmtDur(hours(r.created, r.fixedAt)) : "—"}</td></tr>
+    </table>
+    ${r.photo ? `<h2 class="pr-sec">صورة البلاغ</h2><img class="pr-photo" src="${photoUrl(r.photo)}" alt="">` : ""}
+    ${sign}<p class="pr-foot">تقرير إلكتروني صادر من بوابة واعد — طُبع في ${printedAt()}</p>`;
+  doPrint();
+}
+function printAll(){
+  const list = reports.filter(r => filter === "all" || r.status === filter).slice().sort((a, b) => a.created.localeCompare(b.created));
+  const fixed = list.filter(r => r.status === "fixed"), iso = list.filter(r => r.status === "isolated"), open = list.filter(r => r.status === "open");
+  const ds = fixed.map(r => hours(r.created, r.fixedAt)).filter(h => h >= 0);
+  $("print").innerHTML = head("التقرير الشامل لبلاغات السلامة وإغلاق أماكن الخطر") + `
+    <div class="pr-sum"><div><b>${list.length}</b>إجمالي البلاغات</div><div><b>${fixed.length}</b>تمت معالجتها</div><div><b>${iso.length}</b>معزولة بانتظار المعالجة</div><div><b>${open.length}</b>مفتوحة</div><div><b>${ds.length ? fmtDur(ds.reduce((a,b)=>a+b,0)/ds.length) : "—"}</b>متوسط زمن الإغلاق</div></div>
+    <table class="pr list"><tr><th>الرقم</th><th>التاريخ</th><th>الموقع</th><th>نوع الخطر</th><th>الخطورة</th><th>عزل الموقع</th><th>المعالجة</th><th>الحالة</th></tr>
+    ${list.map(r => `<tr><td>${esc(r.id)}</td><td>${dt(r.date)}</td><td>${esc(r.location)}${r.place ? " — " + esc(r.place) : ""}</td><td>${esc(r.type)}</td><td>${esc(SEV[r.severity]||"")}</td><td>${dt(r.isolatedAt) || "—"}</td><td>${dt(r.fixedAt) || "—"}</td><td>${esc(ST[r.status]||"")}</td></tr>`).join("") || `<tr><td colspan="8">لا توجد بلاغات</td></tr>`}
+    </table>${sign}<p class="pr-foot">تقرير إلكتروني صادر من بوابة واعد — طُبع في ${printedAt()}</p>`;
+  doPrint();
+}
+function doPrint(){
+  const imgs = [...$("print").querySelectorAll("img")];
+  Promise.all(imgs.map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; setTimeout(r, 4000); }))).then(() => window.print());
+}
+
+/* ===== الصورة: تصغيرها قبل الإرسال ===== */
+$("photo").addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const k = Math.min(1, 1280 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    photoData = c.toDataURL("image/jpeg", .8); URL.revokeObjectURL(url); renderForm();
+  };
+  img.onerror = () => toast("تعذّر قراءة الصورة", true);
+  img.src = url;
+});
+
+let tt;
+function toast(m, err){ const t = $("toast"); t.textContent = m; t.classList.toggle("err", !!err); t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 3500); }
+function saveSession(){ try { session ? sessionStorage.setItem("safety-session", JSON.stringify(session)) : sessionStorage.removeItem("safety-session"); } catch(e){} }
+
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.view){
+    document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b === t));
+    $("view-new").classList.toggle("hidden", t.dataset.view !== "new");
+    $("view-log").classList.toggle("hidden", t.dataset.view !== "log");
+    if (t.dataset.view === "log") load();
+  } else if (t.dataset.type){ state.type = t.dataset.type; renderForm(); if (state.type === "أخرى") $("type-other").focus(); }
+  else if (t.dataset.sev){ state.sev = t.dataset.sev; renderForm(); }
+  else if (t.id === "photo-del"){ photoData = ""; $("photo").value = ""; renderForm(); }
+  else if (t.id === "submit"){
+    t.disabled = true; t.textContent = "جاري الإرسال…";
+    try {
+      const r = await api("POST", { action:"report", reporter:$("reporter").value, location:$("location").value, place:$("place").value.trim(), type:typeVal(), severity:state.sev, description:$("desc").value.trim(), photo:photoData });
+      take(r);
+      if (r.ok){
+        toast(`تم استلام البلاغ رقم ${r.id || ""} — شكرًا لك`);
+        $("place").value = ""; $("desc").value = ""; $("type-other").value = ""; state.type = ""; state.sev = ""; photoData = ""; $("photo").value = "";
+      } else toast(r.error, true);
+    } catch(err){ toast("تعذّر إرسال البلاغ. تأكد من الاتصال وحاول مرة أخرى", true); }
+    t.textContent = "إرسال البلاغ"; renderAll();
+  }
+  else if (t.dataset.f){ filter = t.dataset.f; renderList(); }
+  else if (t.id === "print-all") printAll();
+  else if (t.dataset.print) printOne(t.dataset.print);
+  else if (t.dataset.st){
+    const note = (document.querySelector(`[data-note="${CSS.escape(t.dataset.id)}"]`) || {}).value || "";
+    t.disabled = true;
+    try { const r = await api("POST", { action:"update", id:t.dataset.id, status:t.dataset.st, note, user:session.name, pin:session.pin }); take(r); toast(r.ok ? "تم تحديث حالة البلاغ" : r.error, !r.ok); }
+    catch(err){ toast("تعذّر التحديث. حاول مرة أخرى", true); }
+    renderAll();
+  }
+  else if (t.dataset.del){
+    if (!confirm("حذف هذا البلاغ نهائيًا؟")) return;
+    try { const r = await api("POST", { action:"delete", id:t.dataset.del, user:session.name, pin:session.pin }); take(r); toast(r.ok ? "تم الحذف" : r.error, !r.ok); }
+    catch(err){ toast("تعذّر الحذف", true); }
+    renderAll();
+  }
+  else if (t.id === "open-login"){ $("login-pin").value = ""; $("login-dlg").showModal(); }
+  else if (t.id === "close-login") $("login-dlg").close();
+  else if (t.id === "do-login"){
+    const user = $("login-user").value, pin = $("login-pin").value;
+    try { const r = await api("POST", { action:"login", user, pin }); if (r.ok){ session = { name:user, pin, notify:r.notify || "" }; saveSession(); $("login-dlg").close(); toast("تم الدخول"); renderAll(); } else toast(r.error, true); }
+    catch(err){ toast("تعذّر الدخول", true); }
+  }
+  else if (t.id === "logout"){ session = null; saveSession(); renderAll(); }
+  else if (t.id === "open-pin"){ $("new-pin").value = ""; $("pin-dlg").showModal(); }
+  else if (t.id === "close-pin") $("pin-dlg").close();
+  else if (t.id === "do-pin"){
+    const np = $("new-pin").value;
+    if (!/^\d{4,10}$/.test(np)) return toast("الرقم السري من 4 إلى 10 أرقام", true);
+    try { const r = await api("POST", { action:"changePin", user:session.name, pin:session.pin, newPin:np }); if (r.ok){ session.pin = np; saveSession(); $("pin-dlg").close(); toast("تم تغيير الرقم السري"); } else toast(r.error, true); }
+    catch(err){ toast("تعذّر الحفظ", true); }
+  }
+  else if (t.id === "open-mail"){ $("mail-to").value = session.notify || ""; $("mail-dlg").showModal(); }
+  else if (t.id === "close-mail") $("mail-dlg").close();
+  else if (t.id === "do-mail"){
+    const email = $("mail-to").value.trim();
+    try { const r = await api("POST", { action:"setEmail", user:session.name, pin:session.pin, email }); if (r.ok){ session.notify = email; saveSession(); $("mail-dlg").close(); toast(email ? "سيصلك تنبيه عند كل بلاغ جديد" : "تم إيقاف التنبيه"); } else toast(r.error, true); }
+    catch(err){ toast("تعذّر الحفظ", true); }
+  }
+});
+["reporter","location"].forEach(id => $(id).addEventListener("change", renderForm));
+["desc","type-other"].forEach(id => $(id).addEventListener("input", renderForm));
+$("login-pin").addEventListener("keydown", e => { if (e.key === "Enter") $("do-login").click(); });
+
+fill(); renderAll(); load();
+</script>
+</body>
+</html>
