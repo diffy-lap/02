@@ -154,6 +154,9 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 .sp-opt:hover{border-color:var(--c)}
 .sp-opt[aria-pressed="true"]{border-color:var(--c);background:var(--c-soft);color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
 .sp-opt[aria-pressed="true"] small{color:var(--c)}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;border-radius:999px;padding:1px 9px;margin-inline-start:6px;background:var(--c-soft);color:var(--c);vertical-align:middle}
+.tag.photo{background:#FDEBD8;color:#9A4A0B}
+@media (prefers-color-scheme:dark){.tag.photo{background:#3A2614;color:#F4B47A}}
 .sp-pane{margin-top:12px}
 .sp-secs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:10px}
 .sp-sec{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:9px;padding:7px 0;cursor:pointer;font:inherit;font-weight:700}
@@ -199,30 +202,54 @@ footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
 
   <div id="view-new">
     <section class="step">
-      <h2><span class="n">١</span>اسم المعلم</h2>
+      <h2><span class="n">١</span>نوع الطلب</h2>
+      <div class="sp-modes" role="group" aria-label="نوع الطلب">
+        <button type="button" class="sp-opt" data-rtype="studio" aria-pressed="false">حجز الأستوديو<small>تسجيل صوتي أو مرئي داخل الأستوديو</small></button>
+        <button type="button" class="sp-opt" data-rtype="photo" aria-pressed="false">طلب تصوير<small>تصوير حصة أو فعالية أو نشاط في مكانه</small></button>
+      </div>
+    </section>
+
+    <section class="step hidden" id="step-name">
+      <h2><span class="n">٢</span>اسم المعلم</h2>
       <select id="teacher" aria-label="اسم المعلم"></select>
     </section>
 
     <section class="step hidden" id="step-prog">
-      <h2><span class="n">٢</span>اسم البرنامج</h2>
+      <h2><span class="n">٣</span><span id="prog-h">اسم البرنامج</span></h2>
       <input id="program" maxlength="120" autocomplete="off" placeholder="مثال: بودكاست الكيمياء في حياتنا" aria-label="اسم البرنامج">
+      <div id="photo-fields" class="hidden">
+        <label class="f" for="ploc" style="margin-top:14px">مكان التصوير</label>
+        <input id="ploc" maxlength="80" list="ploc-list" autocomplete="off" placeholder="اختر أو اكتب المكان">
+        <datalist id="ploc-list">
+          <option value="الفصل"><option value="المسرح"><option value="الساحة"><option value="المختبر"><option value="مركز مصادر التعلم">
+          <option value="المركز الترفيهي"><option value="قاعة التدريب"><option value="قاعة الاجتماعات"><option value="الملعب"><option value="خارج المدرسة">
+        </datalist>
+        <label class="f" style="margin-top:14px">نوع التصوير</label>
+        <div class="sp-modes" role="group" aria-label="نوع التصوير">
+          <button type="button" class="sp-opt" data-media="صور" aria-pressed="false">صور</button>
+          <button type="button" class="sp-opt" data-media="فيديو" aria-pressed="false">فيديو</button>
+          <button type="button" class="sp-opt" data-media="صور وفيديو" aria-pressed="false">صور وفيديو</button>
+        </div>
+        <label class="f" for="pnotes" style="margin-top:14px">ملاحظات <small style="font-weight:500;color:var(--muted)">(اختياري)</small></label>
+        <input id="pnotes" maxlength="200" autocomplete="off" placeholder="مثال: لقطات للطلاب أثناء التجربة، أو مقابلة قصيرة مع المعلم">
+      </div>
     </section>
 
     <section class="step hidden" id="step-who">
-      <h2><span class="n">٣</span>الطلاب المشاركون</h2>
+      <h2><span class="n">٤</span>الطلاب المشاركون</h2>
       <div id="sp"></div>
     </section>
 
     <section class="step hidden" id="step-slot">
-      <h2><span class="n">٤</span>الموعد</h2>
+      <h2><span class="n" id="slot-n">٥</span>الموعد</h2>
       <div class="weeks" id="weeks"></div>
       <div class="board" id="board"></div>
-      <p class="note">الأستوديو متاح في جميع الحصص: سبع حصص يومي الأحد والاثنين، وست حصص بقية الأيام.</p>
+      <p class="note" id="slot-note">الأستوديو متاح في جميع الحصص: سبع حصص يومي الأحد والاثنين، وست حصص بقية الأيام.</p>
     </section>
 
     <section class="step hidden" id="step-send">
       <div class="summary" id="summary"></div>
-      <button class="primary" id="submit">تأكيد الحجز</button>
+      <button class="primary" id="submit">تأكيد الطلب</button>
     </section>
   </div>
 
@@ -340,7 +367,7 @@ function StudentPicker(root, opts){
 }
 
 /* رابط تطبيق الويب من Apps Script. إذا تركته فاضي تشتغل الصفحة بوضع تجريبي على جهازك فقط. */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbyYR3qxRqobK2SyvRGQL2QDanC3J9XuartNBEQ9nTyz5PpSUdG7GQu5b-SpFaBbsRIe-g/exec";
 
 const SPECS = [
   { name:"كيمياء", teachers:["أحمد بن علي المطاوعة","نضال بن أحمد السبت","معيض بن جبران القحطاني","سالم بن فهد المالكي","حسين بن صالح اليامي","ملحم بن عبدالله الملحم"] },
@@ -354,7 +381,7 @@ const SPECS = [
   { name:"تربية إسلامية", teachers:["عبدالله بن حسين القحطاني","محسن بن سلطان القحطاني","محمد أبوطالب حمدي","علي بن أحمد جراح","ثامر بن نومان حصوي"] },
   { name:"English", teachers:["عبدالله بن حمود المسعود","فيصل بن محمد الشهراني","صالح بن عبدالله الشهري","وليد بن خالد السرحان","خالد بن محمد الأسمري","فيصل بن فهد الملحم","عبدالعزيز بن حمد العيسى"] },
   { name:"تربية بدنية", teachers:["أحمد بن خالد العرفة","صالح بن محمد اليوسف","عبدالله بن فهد الدخيل"] },
-  { name:"النشاط والتوجيه", teachers:["رائد النشاط","الموجه الطلابي","أمين المصادر","السكرتير"] }
+  { name:"النشاط والتوجيه", teachers:["رائد النشاط","الموجه الطلابي","أمين المصادر","المساعد الإداري"] }
 ];
 
 /* عدد الشعب لكل صف */
@@ -386,10 +413,14 @@ function runningWeek(){ const d = DAYS.find(x=>x.date===todayStr()); return d ? 
 let bookings = [];
 let session = null;
 try { session = JSON.parse(sessionStorage.getItem("studio-session")||"null"); } catch(e){}
-const state = { teacher:"", week:defaultWeek(), date:null, period:null, allWeek:defaultWeek() };
+const state = { rtype:"", media:"", teacher:"", week:defaultWeek(), date:null, period:null, allWeek:defaultWeek() };
 const $ = id => document.getElementById(id);
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const busy = (list, date, p) => list.some(b=>b.date===date && +b.period===p);
+/* الأستوديو وطلبات التصوير جدولان منفصلان: طلب التصوير ما يحجز الأستوديو والعكس */
+const isPhoto = b => b.kind === "photo";
+const busy = (list, date, p, photo) => list.some(b=>b.date===date && +b.period===p && isPhoto(b) === !!photo);
+const isPhotoReq = () => state.rtype === "photo";
+const photoText = () => ["المكان: " + $("ploc").value.trim(), "النوع: " + state.media, $("pnotes").value.trim() ? "ملاحظات: " + $("pnotes").value.trim() : ""].filter(Boolean).join(" | ");
 const program = () => $("program").value.trim();
 let picker = null;
 
@@ -417,7 +448,7 @@ function demoApi(method, body){
   if (body.action==="book"){
     const d = DAYS.find(x=>x.date===body.date), p = +body.period;
     if (!d || d.holiday || p<1 || p>d.periods) return out({ ok:false, error:"موعد غير متاح" });
-    if (busy(db.bookings, d.date, p)) return out({ ok:false, error:"هذه الحصة محجوزة" });
+    if (busy(db.bookings, d.date, p, body.kind==="photo")) return out({ ok:false, error:"هذه الحصة محجوزة" });
     db.bookings.push({ id:Math.random().toString(36).slice(2,10), week:d.week, date:d.date, day:d.day, period:p, teacher:body.teacher, program:body.program, kind:body.kind, participants:body.participants, done:false });
   }
   if (body.action==="cancel" || body.action==="mark"){
@@ -446,19 +477,30 @@ function fillTeachers(){
   $("teacher").innerHTML = `<option value="">اختر اسمك</option>` + SPECS.map(s=>
     `<optgroup label="${esc(s.name)}">${s.teachers.map(t=>`<option>${esc(t)}</option>`).join("")}</optgroup>`).join("");
 }
-function whoReady(){ return !!picker && picker.ready(); }
+function whoReady(){ return isPhotoReq() ? true : !!picker && picker.ready(); }
+function progReady(){ return !!program() && (!isPhotoReq() || (!!$("ploc").value.trim() && !!state.media)); }
 function renderNew(){
-  const hasName = !!state.teacher, hasProg = hasName && !!program(), hasWho = hasProg && whoReady();
+  const photo = isPhotoReq();
+  document.querySelectorAll("[data-rtype]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.rtype===state.rtype));
+  document.querySelectorAll("[data-media]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.media===state.media));
+  $("step-name").classList.toggle("hidden", !state.rtype);
+  $("prog-h").textContent = photo ? "تفاصيل التصوير" : "اسم البرنامج";
+  $("program").placeholder = photo ? "عنوان الفعالية أو الحصة، مثال: تجربة الكشف عن الأيونات" : "مثال: بودكاست الكيمياء في حياتنا";
+  $("program").setAttribute("aria-label", photo ? "عنوان الفعالية" : "اسم البرنامج");
+  $("photo-fields").classList.toggle("hidden", !photo);
+  $("slot-n").textContent = photo ? "٤" : "٥";
+  $("slot-note").textContent = photo ? "اختر الحصة اللي تبي التصوير فيها. طلبات التصوير مستقلة عن حجز الأستوديو." : "الأستوديو متاح في جميع الحصص: سبع حصص يومي الأحد والاثنين، وست حصص بقية الأيام.";
+  const hasName = !!state.rtype && !!state.teacher, hasProg = hasName && progReady(), hasWho = hasProg && whoReady();
   $("step-prog").classList.toggle("hidden", !hasName);
-  $("step-who").classList.toggle("hidden", !hasProg);
+  $("step-who").classList.toggle("hidden", !hasProg || photo);
   $("step-slot").classList.toggle("hidden", !hasWho);
   if (hasWho){ renderWeeks("weeks", state.week); renderBoard(); }
   const ready = hasWho && state.date && state.period;
   $("step-send").classList.toggle("hidden", !ready);
   if (ready){
     const d = DAYS.find(x=>x.date===state.date);
-    const who = picker.summary();
-    $("summary").textContent = `${state.teacher} — ${program()} — ${who} — ${d.day} ${fmtG.format(d.dt)}، الحصة ${PERIOD_NAMES[state.period-1]}`;
+    const who = photo ? `${$("ploc").value.trim()} — ${state.media}` : picker.summary();
+    $("summary").textContent = `${photo ? "طلب تصوير: " : ""}${state.teacher} — ${program()} — ${who} — ${d.day} ${fmtG.format(d.dt)}، الحصة ${PERIOD_NAMES[state.period-1]}`;
   }
 }
 function renderWeeks(id, active){
@@ -476,7 +518,7 @@ function renderBoard(){
     if (d.holiday) return `<div class="day">${dayHead(d)}<div class="holiday">إجازة</div></div>`;
     const past = d.date < t;
     const slots = PERIOD_NAMES.slice(0, d.periods).map((p,i)=>{
-      const taken = busy(bookings, d.date, i+1);
+      const taken = busy(bookings, d.date, i+1, isPhotoReq());
       return `<button class="slot" ${past||taken?"disabled":""} aria-pressed="${state.date===d.date&&state.period===i+1}" data-date="${d.date}" data-period="${i+1}" aria-label="${d.day} الحصة ${p}${taken?" محجوزة":""}">${p}</button>`;
     }).join("");
     return `<div class="day">${dayHead(d)}<div class="slots">${slots}</div></div>`;
@@ -491,8 +533,8 @@ function renderAgenda(){
     if (!list.length) return `<div class="aday">${head}<div class="empty">لا توجد حجوزات — متاح</div></div>`;
     return `<div class="aday">${head}${list.map(b=>`
       <div class="item"><span class="pnum">الحصة ${PERIOD_NAMES[b.period-1]}</span>
-        <div><b>${esc(b.program)}</b> — ${esc(b.teacher)}</div>
-        <div class="l">${b.kind==="names"?"الطلاب":b.kind==="clubs"?"الأندية":"الفصول"}: ${esc(b.participants)}</div>
+        <div><b>${esc(b.program)}</b> — ${esc(b.teacher)}<span class="tag${isPhoto(b)?" photo":""}">${isPhoto(b)?"طلب تصوير":"الأستوديو"}</span></div>
+        <div class="l">${isPhoto(b) ? esc(b.participants) : `${b.kind==="names"?"الطلاب":b.kind==="clubs"?"الأندية":"الفصول"}: ${esc(b.participants)}`}</div>
         ${isAdmin()
           ? `<div class="acts"><button class="act mark" aria-pressed="${!!b.done}" data-mark="${esc(b.id)}" data-done="${!b.done}">${b.done?"✓ تم التنفيذ":"تم التنفيذ"}</button><button class="act" data-del="${esc(b.id)}">حذف</button></div>`
           : (b.done ? `<div><span class="done">تم التنفيذ</span></div>` : "")}
@@ -501,8 +543,8 @@ function renderAgenda(){
 }
 function renderAll(){ renderSession(); renderNew(); renderAgenda(); }
 function resetForm(){
-  $("program").value=""; picker.reset();
-  state.date=null; state.period=null;
+  $("program").value=""; $("ploc").value=""; $("pnotes").value=""; picker.reset();
+  state.date=null; state.period=null; state.media="";
 }
 
 let tt;
@@ -527,18 +569,23 @@ document.addEventListener("click", async e=>{
   } else if (t.dataset.week){
     if (t.parentElement.id==="weeks-all"){ state.allWeek=+t.dataset.week; renderAgenda(); }
     else { state.week=+t.dataset.week; renderNew(); }
+  } else if (t.dataset.rtype){
+    if (state.rtype !== t.dataset.rtype){ state.rtype = t.dataset.rtype; state.date=null; state.period=null; }
+    renderNew();
+  } else if (t.dataset.media){
+    state.media = t.dataset.media; renderNew();
   } else if (t.dataset.period){
     state.date=t.dataset.date; state.period=+t.dataset.period; renderNew();
     $("submit").scrollIntoView({ behavior:"smooth", block:"center" });
   } else if (t.id==="submit"){
     t.disabled=true; t.textContent="جاري الحجز…";
     try{
-      const r = await api("POST", { action:"book", teacher:state.teacher, program:program(), kind:picker.kind(), participants:picker.text(), date:state.date, period:state.period });
+      const r = await api("POST", { action:"book", teacher:state.teacher, program:program(), kind:isPhotoReq() ? "photo" : picker.kind(), participants:isPhotoReq() ? photoText() : picker.text(), date:state.date, period:state.period });
       take(r);
-      if (r.ok){ toast("تم الحجز"); resetForm(); }
+      if (r.ok){ toast(isPhotoReq() ? "تم إرسال طلب التصوير" : "تم الحجز"); resetForm(); }
       else { toast(r.error, true); state.date=null; state.period=null; }
     } catch(err){ toast("تعذّر الحجز. تأكد من الاتصال وحاول مرة أخرى", true); }
-    t.disabled=false; t.textContent="تأكيد الحجز";
+    t.disabled=false; t.textContent="تأكيد الطلب";
     renderAll();
   } else if (t.dataset.mark){
     const done = t.dataset.done==="true";
@@ -596,6 +643,7 @@ document.addEventListener("click", async e=>{
 });
 $("teacher").addEventListener("change", e=>{ state.teacher=e.target.value; renderNew(); });
 $("program").addEventListener("input", renderNew);
+$("ploc").addEventListener("input", renderNew);
 picker = StudentPicker($("sp"), { onChange: renderNew });
 
 fillTeachers();
