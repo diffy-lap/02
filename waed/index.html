@@ -3,120 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>بوابة واعد الدفي</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='23' rx='6' fill='%2316213A'/%3E%3Crect x='9' y='2' width='3' height='8' rx='1.5' fill='%23C98A1F'/%3E%3Crect x='20' y='2' width='3' height='8' rx='1.5' fill='%23C98A1F'/%3E%3Cpath d='M10 18l4 4 8-8' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#07277A">
+<title>واعد — بوابة خدمات ثانوية الدفي</title>
+<link rel="icon" href="rc-logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* ===== ألوان هوية الهيئة الملكية ===== */
 :root{
-  --ink:#16213A; --muted:#5E6780; --paper:#F2F4F8; --card:#FFFFFF; --line:#DDE2EC;
-  --gold:#C98A1F; --gold-soft:#FBF0DC;
-  --lab:#0D7A5F; --lab-soft:#E2F3EE;
-  --visit:#6A3FD6; --visit-soft:#EEE8FC;
-  --res:#B5523A; --res-soft:#F9E8E3;
-  --club:#C2306A; --club-soft:#FBE6EF; --train:#0E7490; --train-soft:#E0F2F7;
-  --meet:#3559B7; --meet-soft:#E7EDFB; --studio:#9A6A0E; --studio-soft:#FBF0DC;
-  --exam:#4B5563; --exam-soft:#ECEEF3; --quiz:#2E7D4F; --quiz-soft:#E3F4E9; --links:#0369A1; --links-soft:#E0F0FA;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  --navy:#07277A; --navy-2:#10346F; --royal:#2834FF; --violet:#8044FF; --green:#22CC77; --sky:#4FC3FF; --sand:#C9A27E;
+  --ink:#0E1A3A; --ink-2:#47526E; --muted:#7A849C; --line:#E3E7F0; --paper:#F4F6FB; --card:#FFFFFF; --chip:#EEF1FB;
+  --bar:#2834FF; --bar-soft:#C7CBFF; --ok:#14935A; --shadow:0 1px 2px rgba(14,26,58,.05),0 8px 24px rgba(14,26,58,.06);
+  color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
-    --gold:#E8B55A; --gold-soft:#33291A;
-    --lab:#38B58A; --lab-soft:#15302A; --visit:#A88BFF; --visit-soft:#2A2150; --res:#EE8B72; --res-soft:#3A221C;
-    --club:#F58AB4; --club-soft:#3A1B29; --train:#4FC3DC; --train-soft:#11303A;
-    --meet:#86A4F5; --meet-soft:#1D2848; --studio:#E8B55A; --studio-soft:#33291A; --exam:#B6BECF; --exam-soft:#222A38; --quiz:#6FD39B; --quiz-soft:#163323; --links:#5EB8E8; --links-soft:#0F2A3A;
+    --ink:#EAF0FF; --ink-2:#B3BDD6; --muted:#8792AD; --line:#26314A; --paper:#0B1222; --card:#131C31; --chip:#1B2640;
+    --bar:#7C83FF; --bar-soft:#2E3768; --ok:#4FD39A; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
   }
+  :root:not([data-theme="light"]) .svc,.ev{--ci:color-mix(in srgb,var(--c) 55%,#fff)}
+  :root:not([data-theme="light"]) .ico{background:color-mix(in srgb,var(--c) 28%,transparent)!important}
+  :root:not([data-theme="light"]) .badge i,.ev .svcn i{background:var(--ci)!important}
 }
 :root[data-theme="dark"]{
-  --ink:#E9EDF6; --muted:#9AA3BB; --paper:#10151F; --card:#18202E; --line:#2A3446;
-  --gold:#E8B55A; --gold-soft:#33291A;
-  --lab:#38B58A; --lab-soft:#15302A; --visit:#A88BFF; --visit-soft:#2A2150; --res:#EE8B72; --res-soft:#3A221C;
-    --club:#F58AB4; --club-soft:#3A1B29; --train:#4FC3DC; --train-soft:#11303A;
-    --meet:#86A4F5; --meet-soft:#1D2848; --studio:#E8B55A; --studio-soft:#33291A; --exam:#B6BECF; --exam-soft:#222A38; --quiz:#6FD39B; --quiz-soft:#163323; --links:#5EB8E8; --links-soft:#0F2A3A;
+  --ink:#EAF0FF; --ink-2:#B3BDD6; --muted:#8792AD; --line:#26314A; --paper:#0B1222; --card:#131C31; --chip:#1B2640;
+  --bar:#7C83FF; --bar-soft:#2E3768; --ok:#4FD39A; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25); color-scheme:dark;
 }
-*,*::before,*::after{box-sizing:inherit}
-html{height:100%}
-body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);
-  font-family:"Tajawal","IBM Plex Sans Arabic",Tahoma,"Segoe UI",Arial,sans-serif;font-size:17px;line-height:1.6;
-  display:flex;flex-direction:column}
-main{flex:1;width:100%;max-width:640px;margin:0 auto;padding:40px 20px 32px}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Arabic","Tajawal",Tahoma,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.hidden{display:none!important}
 
-/* الهوية */
-.brand{display:flex;align-items:center;gap:18px;margin-bottom:10px}
-.mark{width:84px;height:84px;flex:none}
-.mark .body{fill:var(--ink)}
-.mark .ring{fill:var(--gold)}
-.mark .tick{stroke:var(--paper)}
-.word h1{margin:0;font-weight:900;font-size:3.4rem;line-height:1;letter-spacing:0}
-.word p{margin:6px 0 0;color:var(--muted);font-weight:500;font-size:1.05rem}
-.lead{margin:22px 0 30px;color:var(--muted);max-width:34em}
+/* الشريط العلوي */
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0)}
+.topbar .wrap{display:flex;align-items:center;gap:14px;height:68px}
+.topbar img{height:40px;width:auto}
+.topbar .sep{width:1px;height:30px;background:var(--line)}
+.topbar .name b{display:block;font-size:1.25rem;font-weight:700;line-height:1.1;letter-spacing:-.01em}
+.topbar .name span{font-size:.8rem;color:var(--muted)}
+.topbar nav{margin-inline-start:auto;display:flex;gap:4px}
+.topbar nav a{text-decoration:none;color:var(--ink-2);font-weight:500;font-size:.92rem;padding:8px 12px;border-radius:10px}
+.topbar nav a:hover{background:var(--chip);color:var(--ink)}
+
+/* البطاقة الرئيسية */
+.hero{position:relative;overflow:hidden;margin-top:22px;border-radius:28px;color:#fff;
+  background:linear-gradient(135deg,#061E5E 0%,#07277A 45%,#1B2FD8 100%);padding:34px 34px 30px;min-height:220px}
+.hero .shapes{position:absolute;inset-inline-end:-30px;top:-20px;transform:scaleX(-1);width:420px;height:320px;opacity:.9;pointer-events:none}
+.hero .inner{position:relative;max-width:620px}
+.hello{font-size:.95rem;color:#C9D4FF;font-weight:500}
+.hero h1{margin:6px 0 4px;font-size:2.15rem;line-height:1.25;font-weight:700;letter-spacing:-.01em}
+.hero .date{color:#DDE4FF;font-size:.95rem}
+.progress{margin-top:22px;max-width:420px}
+.progress .lbl{display:flex;justify-content:space-between;font-size:.85rem;color:#C9D4FF;margin-bottom:8px}
+.progress .lbl b{color:#fff;font-weight:600}
+.track{height:8px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--green),var(--sky))}
+
+/* المؤشرات */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:-26px;position:relative;z-index:2;padding:0 14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow)}
+.kpi .k{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--ink-2);font-weight:500}
+.kpi .k i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--royal));flex:none}
+.kpi .v{font-size:2rem;font-weight:700;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.8rem;color:var(--muted)}
+.skel{display:inline-block;width:56px;height:28px;border-radius:8px;background:linear-gradient(90deg,var(--chip),var(--line),var(--chip));background-size:200% 100%;animation:sh 1.2s infinite linear;vertical-align:middle}
+@keyframes sh{to{background-position:-200% 0}}
+
+section{margin-top:40px}
+.sh{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.sh h2{margin:0;font-size:1.3rem;font-weight:700}
+.sh p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
 
 /* الخدمات */
-.services{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.svc{--c:var(--lab);--c-soft:var(--lab-soft)}
-.svc.visit{--c:var(--visit);--c-soft:var(--visit-soft)}
-.svc.res{--c:var(--res);--c-soft:var(--res-soft)}
-.svc.club{--c:var(--club);--c-soft:var(--club-soft)}
-.svc.train{--c:var(--train);--c-soft:var(--train-soft)}
-.svc.meet{--c:var(--meet);--c-soft:var(--meet-soft)}
-.svc.studio{--c:var(--studio);--c-soft:var(--studio-soft)}
-.svc.exam{--c:var(--exam);--c-soft:var(--exam-soft)}
-.svc.quiz{--c:var(--quiz);--c-soft:var(--quiz-soft)}
-.svc.links{--c:var(--links);--c-soft:var(--links-soft)}
-.svc a,.svc .soon{display:grid;grid-template-columns:64px 1fr auto;align-items:center;gap:16px;
-  padding:16px 18px;border-radius:16px;background:var(--card);border:1.5px solid var(--line);
-  color:inherit;text-decoration:none}
-.svc a{transition:border-color .15s,transform .15s}
-.svc a:hover{border-color:var(--c)}
-.svc a:active{transform:scale(.99)}
-.svc a:focus-visible{outline:3px solid var(--c);outline-offset:3px}
-.ico{width:64px;height:64px;border-radius:14px;background:var(--c-soft);display:grid;place-items:center}
-.ico svg{width:44px;height:44px;color:var(--c)}
-.svc h2{margin:0;font-size:1.2rem;font-weight:700}
-.svc p{margin:2px 0 0;color:var(--muted);font-size:.93rem;line-height:1.5}
-.go{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--c);border:1.5px solid var(--line)}
-.svc a:hover .go{background:var(--c);border-color:var(--c);color:#fff}
-.soon{opacity:.72;border-style:dashed !important}
-.tag{font-size:.8rem;font-weight:700;color:var(--c);background:var(--c-soft);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.services{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.svc a{display:flex;gap:14px;align-items:flex-start;height:100%;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.svc a:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 45%,var(--line));box-shadow:0 12px 30px rgba(14,26,58,.10)}
+.svc a:focus-visible{outline:3px solid var(--royal);outline-offset:2px}
+.ico{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;flex:none;color:var(--ci,var(--c));background:color-mix(in srgb,var(--c) 12%,transparent)}
+.ico svg{width:34px;height:34px}
+.svc h3{margin:0;font-size:1.02rem;font-weight:600;line-height:1.35}
+.svc p{margin:3px 0 0;font-size:.85rem;color:var(--muted);line-height:1.5}
+.badge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.78rem;font-weight:600;color:var(--ink-2);background:var(--chip);border-radius:99px;padding:2px 10px}
+.badge i{width:6px;height:6px;border-radius:50%;background:var(--c)}
 
-footer{max-width:640px;width:100%;margin:0 auto;padding:18px 18px 28px;border-top:1px solid var(--line);
-  display:flex;justify-content:center;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;
-  font-family:"Segoe UI",Tahoma,Arial,sans-serif;letter-spacing:.02em}
-footer .mail{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;color:var(--gold);border:1.5px solid var(--line)}
-footer .mail:hover{background:var(--gold-soft);border-color:var(--gold)}
-footer .mail:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+/* اللوحة */
+.grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px 20px;box-shadow:var(--shadow);min-width:0}
+.panel h3{margin:0;font-size:1rem;font-weight:600}
+.panel .sub{margin:2px 0 14px;font-size:.82rem;color:var(--muted)}
+.hbar{display:grid;gap:10px}
+.hrow{display:grid;grid-template-columns:150px 1fr 34px;align-items:center;gap:10px;font-size:.88rem;position:relative}
+.hrow .n{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrow .b{height:14px;background:var(--chip);border-radius:4px;overflow:hidden}
+.hrow .b i{display:block;height:100%;background:var(--bar);border-radius:4px;min-width:2px}
+.hrow .val{font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+.cols{position:relative;height:210px;display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-items:end;border-bottom:1px solid var(--line);padding-top:26px;margin-top:8px}
+.col{position:relative;height:100%;display:flex;align-items:flex-end;justify-content:center;cursor:default}
+.col i{display:block;width:100%;max-width:30px;background:var(--bar-soft);border-radius:4px 4px 0 0;min-height:2px}
+.col.cur i{background:var(--bar)}
+.col .tv{position:absolute;font-size:.75rem;font-weight:600;color:var(--ink);transform:translateY(-100%);padding-bottom:3px}
+.xl{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;margin-top:6px;font-size:.72rem;color:var(--muted);text-align:center}
+.xl .cur{color:var(--ink);font-weight:600}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--paper);font-size:.8rem;padding:6px 10px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .1s}
+.tip.on{opacity:1}
 
-@media (max-width:480px){
-  main{padding-top:28px}
-  .mark{width:66px;height:66px}
-  .word h1{font-size:2.7rem}
-  .svc a,.svc .soon{grid-template-columns:54px 1fr auto;gap:12px;padding:14px}
-  .ico{width:54px;height:54px;border-radius:12px}
-  .ico svg{width:38px;height:38px}
+/* اليوم */
+.today{display:grid;gap:8px}
+.ev{display:grid;grid-template-columns:86px 1fr;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 14px}
+.ev .t{font-size:.8rem;font-weight:600;color:var(--ink-2);background:var(--chip);border-radius:10px;padding:6px 8px;text-align:center}
+.ev b{font-weight:600;font-size:.95rem}
+.ev .m{font-size:.82rem;color:var(--muted)}
+.ev .svcn{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--ink-2)}
+.ev .svcn i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.ev .ok{color:var(--ok);font-weight:600;font-size:.78rem}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:18px;text-align:center;color:var(--muted);font-size:.92rem}
+.status{margin-top:10px;font-size:.8rem;color:var(--muted)}
+.tablev{margin-top:10px}
+.tablev summary{cursor:pointer;font-size:.82rem;color:var(--ink-2)}
+.tablev table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:8px}
+.tablev td,.tablev th{border-bottom:1px solid var(--line);padding:5px 4px;text-align:start}
+
+footer{margin-top:56px;border-top:1px solid var(--line);padding:22px 20px calc(90px + env(safe-area-inset-bottom,0));display:flex;justify-content:center;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;font-family:"Segoe UI",Tahoma,sans-serif}
+footer .mail{display:inline-grid;place-items:center;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);color:var(--royal)}
+
+/* الشريط السفلي للجوال */
+.tabbar{display:none}
+@media (max-width:760px){
+  .topbar nav{display:none}
+  .topbar img{height:34px}
+  .hero{padding:26px 22px 44px;border-radius:24px}
+  .hero h1{font-size:1.6rem}
+  .hero .shapes{width:300px;height:230px;opacity:.55}
+  .kpis{grid-template-columns:1fr 1fr;padding:0 8px;gap:10px}
+  .kpi .v{font-size:1.6rem}
+  .grid2{grid-template-columns:1fr}
+  .services{grid-template-columns:1fr 1fr;gap:10px}
+  .svc a{flex-direction:column;gap:10px;padding:14px;border-radius:18px}
+  .svc p{display:none}
+  .svc h3{font-size:.95rem}
+  .ico{width:46px;height:46px;border-radius:13px}.ico svg{width:30px;height:30px}
+  .badge{font-size:.72rem;padding:2px 8px}
+  .hrow{grid-template-columns:118px 1fr 28px}
+  .cols{gap:4px}.xl{gap:4px}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;inset:auto 0 0 0;z-index:30;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0))}
+  .tabbar a{display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;font-size:.72rem;color:var(--ink-2);padding:4px 0;border-radius:10px}
+  .tabbar svg{width:22px;height:22px}
 }
-@media (prefers-reduced-motion:reduce){.svc a{transition:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<main>
-  <header class="brand">
-    <svg class="mark" viewBox="0 0 84 84" aria-hidden="true">
-      <rect class="body" x="6" y="14" width="72" height="64" rx="18"/>
-      <rect class="ring" x="22" y="4" width="9" height="22" rx="4.5"/>
-      <rect class="ring" x="53" y="4" width="9" height="22" rx="4.5"/>
-      <path class="tick" d="M26 48l11 11 22-22" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div class="word">
-      <h1>واعد</h1>
-      <p>بوابة حجوزات ثانوية الدفي</p>
-    </div>
-  </header>
-  <p class="lead">اختر الخدمة التي تحتاجها، وتنتقل مباشرة إلى صفحة الحجز.</p>
+<header class="topbar" id="top">
+  <div class="wrap">
+    <img src="rc-logo.png" alt="الهيئة الملكية للجبيل وينبع" width="53" height="40">
+    <span class="sep" aria-hidden="true"></span>
+    <div class="name"><b>واعد</b><span>بوابة خدمات ثانوية الدفي</span></div>
+    <nav aria-label="أقسام الصفحة"><a href="#services">الخدمات</a><a href="#stats">المؤشرات</a><a href="#today">اليوم</a></nav>
+  </div>
+</header>
 
-  <ul class="services" id="services"></ul>
+<main class="wrap">
+  <div class="hero">
+    <svg class="shapes" viewBox="0 0 420 320" aria-hidden="true">
+      <path d="M20 40h190l60 76-170 40z" fill="#8044FF" opacity=".55"/>
+      <path d="M100 156l170-40v170l-170-40z" fill="#22CC77" opacity=".35"/>
+      <path d="M270 116l150 50v100l-150 50z" fill="#4FC3FF" opacity=".35"/>
+    </svg>
+    <div class="inner">
+      <div class="hello" id="hello">أهلًا بك</div>
+      <h1>كل خدمات ثانوية الدفي في مكان واحد</h1>
+      <div class="date" id="today-date"></div>
+      <div class="progress" aria-label="تقدّم الفصل الدراسي">
+        <div class="lbl"><span>الفصل الدراسي الأول</span><b id="week-lbl"></b></div>
+        <div class="track"><i id="week-bar" style="width:0"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpis" aria-live="polite">
+    <div class="kpi" style="--c:var(--royal)"><div class="k"><i></i>حجوزات اليوم</div><div class="v" id="k-today"><span class="skel"></span></div><div class="s" id="k-today-s">في جميع الخدمات</div></div>
+    <div class="kpi" style="--c:var(--violet)"><div class="k"><i></i>هذا الأسبوع</div><div class="v" id="k-week"><span class="skel"></span></div><div class="s" id="k-week-s"></div></div>
+    <div class="kpi" style="--c:var(--sky)"><div class="k"><i></i>منذ بداية الفصل</div><div class="v" id="k-all"><span class="skel"></span></div><div class="s">إجمالي الحجوزات</div></div>
+    <div class="kpi" style="--c:var(--green)"><div class="k"><i></i>نسبة التنفيذ</div><div class="v" id="k-done"><span class="skel"></span></div><div class="s" id="k-done-s">من الحجوزات الماضية</div></div>
+  </div>
+
+  <section id="services">
+    <div class="sh"><div><h2>الخدمات</h2><p>اختر الخدمة وتنتقل مباشرة إلى صفحة الحجز.</p></div></div>
+    <ul class="services" id="svc-list"></ul>
+  </section>
+
+  <section id="stats">
+    <div class="sh"><div><h2>لوحة المؤشرات</h2><p id="stats-sub">تُحدَّث تلقائيًا من جداول الحجز.</p></div></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>حجوزات هذا الأسبوع حسب الخدمة</h3><p class="sub" id="hbar-sub"></p>
+        <div class="hbar" id="hbar"></div>
+      </div>
+      <div class="panel">
+        <h3>الحجوزات عبر أسابيع الفصل</h3><p class="sub">عدد الحجوزات في كل أسبوع، والأسبوع الحالي مميّز.</p>
+        <div class="cols" id="cols" role="img"></div>
+        <div class="xl" id="xl"></div>
+        <details class="tablev"><summary>عرض الأرقام كجدول</summary><table id="wtable"></table></details>
+      </div>
+    </div>
+    <p class="status" id="status"></p>
+  </section>
+
+  <section id="today">
+    <div class="sh"><div><h2>اليوم في واعد</h2><p id="today-sub"></p></div></div>
+    <div class="today" id="today-list"><div class="empty">جاري التحميل…</div></div>
+  </section>
 </main>
 
 <footer dir="ltr">
@@ -126,8 +225,15 @@ footer .mail:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
   </a>
 </footer>
 
+<nav class="tabbar" aria-label="التنقل">
+  <a href="#top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>الرئيسية</a>
+  <a href="#services"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>الخدمات</a>
+  <a href="#stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>المؤشرات</a>
+  <a href="#today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>اليوم</a>
+</nav>
+<div class="tip" id="tip" role="tooltip"></div>
+
 <script>
-/* كل الأيقونات مبنية على ورقة التقويم نفسها (شعار واعد)، وداخلها رمز الخدمة */
 const FRAME = `<rect x="5" y="9" width="38" height="35" rx="9" fill="none" stroke="currentColor" stroke-width="3"/>
   <rect x="13" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/><rect x="30.5" y="4" width="4.5" height="10" rx="2.25" fill="currentColor"/>`;
 const ICONS = {
@@ -168,28 +274,168 @@ const ICONS = {
          <path d="M18.5 23l2 2 3.5-3.5M18.5 31l2 2 3.5-3.5M26.5 24h3.5M26.5 32h3.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`
 };
 
-/* لإضافة رابط جديد مستقبلًا: أضف عنصرًا هنا. لو ما له رابط بعد اترك href فاضي ويظهر "قريبًا" */
+/* لإضافة خدمة: أضف عنصرًا هنا. api = رابط Apps Script للخدمة (للإحصاءات فقط) */
 const SERVICES = [
-  { key:"lab",   title:"حجز المختبرات",     desc:"احجز حصة في مختبر الكيمياء أو الأحياء أو الفيزياء.",  href:"../" },
-  { key:"visit", title:"الزيارات الفنية",   desc:"احجز موعد زيارتك الصفية مع مدير المدرسة والوكيل.",   href:"../visits/" },
-  { key:"res",   title:"حجز مصادر التعلم",  desc:"زيارة صفية أو نشاط في المركز، أو طلب توريد كتاب.",     href:"../resources/" },
-  { key:"club",   title:"حجز المركز الترفيهي",            desc:"احجز حصة في المركز الترفيهي لطلاب أحد الصفوف.",        href:"../club/" },
-  { key:"train",  title:"حجز قاعة التدريب",              desc:"احجز قاعة التدريب لدورة أو ورشة عمل.",                 href:"../training/" },
-  { key:"meet",   title:"حجز قاعة الاجتماعات",           desc:"احجز قاعة الاجتماعات لاجتماع أو لقاء.",                href:"../meeting/" },
-  { key:"studio", title:"حجز الأستوديو المدرسي",          desc:"احجز الأستوديو لتسجيل صوتي أو مرئي.",                  href:"../studio/" },
-  { key:"exam",   title:"حجز مركز الاختبارات المحوسبة",   desc:"احجز المركز لاختبار إلكتروني لطلابك.",                  href:"../exam/" },
-  { key:"quiz",   title:"تقويم الاختبارات القصيرة",       desc:"سجّل اختبارك القصير ووزّع الاختبارات على أيام الأسبوع.", href:"../quiz/" },
-  { key:"links",  title:"روابط تهمك",                     desc:"المتمم وبوابة المعلمين ومدرستي في مكان واحد.",          href:"../teacher/" }
+  { key:"lab",    c:"#8044FF", title:"حجز المختبرات",               desc:"احجز حصة في مختبر الكيمياء أو الأحياء أو الفيزياء.", href:"../",          api:"https://script.google.com/macros/s/AKfycbyLtp87-yxvtylcQ40Nf-UPuG12-gGB_yNLWGqWRGaw1bQPHt2bZzitmIpgVTHXtjtpPw/exec", kind:"lab" },
+  { key:"visit",  c:"#07277A", title:"الزيارات الفنية",             desc:"احجز موعد زيارتك الصفية مع مدير المدرسة والوكيل.",   href:"../visits/",   api:"https://script.google.com/macros/s/AKfycbyjCnQGbmJxsq-2ar9lShU0MvokwMvWBfceh-Da16KiEhJUw2iIntexiN5FDF3gDkPb/exec" },
+  { key:"res",    c:"#B5562C", title:"حجز مصادر التعلم",            desc:"زيارة صفية أو نشاط في المركز، أو طلب توريد كتاب.",     href:"../resources/",api:"https://script.google.com/macros/s/AKfycbxwiKO7ufcxqaNjfp6j5bOBoICpgb4nCKsqkMP_codCeyzHeeiKWjIY5DBcMZZI-NtzFQ/exec" },
+  { key:"club",   c:"#D0346B", title:"حجز المركز الترفيهي",          desc:"احجز حصة في المركز لطلاب فصل أو نادٍ طلابي.",          href:"../club/",     api:"https://script.google.com/macros/s/AKfycbwCjR9SMuNdSdISKCWhZXvgOdeM_wJfT0gjh1LvP9YutbIdyG4LR8ecCqZFRiv4Sscw/exec" },
+  { key:"train",  c:"#0E8C8C", title:"حجز قاعة التدريب",            desc:"احجز القاعة لدورة أو ورشة عمل، حصة أو حصتين.",         href:"../training/", api:"https://script.google.com/macros/s/AKfycbwm4ePoRvv0p8W7P2uBYGYUGEQ_xf4XB_ak2es6J_l1G3tBEt2wP52SW3MqTStHrT57/exec" },
+  { key:"meet",   c:"#2834FF", title:"حجز قاعة الاجتماعات",         desc:"احجز القاعة لاجتماع، في أي حصة أو في الفسحة.",          href:"../meeting/",  api:"https://script.google.com/macros/s/AKfycbxivDCSJ4THDngnfS5eltUEm0Ph8_72_56WTtzeh1HJeZV_gCa1G19FMKvkfWeQJ1Bk/exec" },
+  { key:"studio", c:"#B07A12", title:"حجز الأستوديو المدرسي",        desc:"احجز الأستوديو لتسجيل صوتي أو مرئي.",                  href:"../studio/",   api:"https://script.google.com/macros/s/AKfycbyYR3qxRqobK2SyvRGQL2QDanC3J9XuartNBEQ9nTyz5PpSUdG7GQu5b-SpFaBbsRIe-g/exec" },
+  { key:"exam",   c:"#4B5563", title:"حجز مركز الاختبارات المحوسبة", desc:"احجز المركز لاختبار إلكتروني لطلابك.",                   href:"../exam/",     api:"https://script.google.com/macros/s/AKfycbxefcOOxxoH-fmYU8yAhD4ync5gnZEz1S-KB5kxZP0XPdJsLUSbIJoHGejXH6CY1BvfOA/exec" },
+  { key:"quiz",   c:"#14935A", title:"تقويم الاختبارات القصيرة",     desc:"سجّل اختبارك القصير ووزّع الاختبارات على الأسبوع.",     href:"../quiz/",     api:"https://script.google.com/macros/s/AKfycbwqi1nvZ8pooDL9cTpYvHmX5TluFoQ896D161pUjx9iTnh7KKCJ8jFLu8IltYUeWxa_8w/exec", noDone:true },
+  { key:"links",  c:"#0369A1", title:"روابط تهمك",                   desc:"المتمم وبوابة المعلمين ومدرستي في مكان واحد.",          href:"../teacher/" }
 ];
 
-const arrow = `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-document.getElementById("services").innerHTML = SERVICES.map(s=>{
-  const icon = `<span class="ico"><svg viewBox="0 0 48 48" aria-hidden="true">${FRAME}${ICONS[s.key]||""}</svg></span>`;
-  const text = `<span><h2>${s.title}</h2><p>${s.desc}</p></span>`;
-  return s.href
-    ? `<li class="svc ${s.key}"><a href="${s.href}">${icon}${text}<span class="go">${arrow}</span></a></li>`
-    : `<li class="svc ${s.key}"><div class="soon" aria-disabled="true">${icon}${text}<span class="tag">قريبًا</span></div></li>`;
-}).join("");
+/* التقويم: الأسابيع 6 إلى 17، وإجازة الخريف بعد الأسبوع 13 */
+const FIRST_WEEK = 6, LAST_WEEK = 17, BREAK_AFTER = 13, START_UTC = Date.UTC(2026, 8, 27);
+const HOLIDAYS = ["2026-10-25"];
+const DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
+const PN = ["الأولى","الثانية","الثالثة","الرابعة","الخامسة","السادسة","السابعة"];
+const weekStart = w => START_UTC + ((w-FIRST_WEEK) + (w>BREAK_AFTER?1:0)) * 7 * 86400000;
+const DAYS = [];
+for (let w=FIRST_WEEK; w<=LAST_WEEK; w++) for (let d=0; d<5; d++){
+  const date = new Date(weekStart(w) + d*86400000).toISOString().slice(0,10);
+  DAYS.push({ week:w, day:DAY_NAMES[d], date, holiday:HOLIDAYS.includes(date) });
+}
+const weekOf = date => (DAYS.find(d=>d.date===date)||{}).week || null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf = n => new Intl.NumberFormat("ar-SA-u-nu-latn").format(n);
+function todayStr(){ const n=new Date(); return new Date(n.getTime()-n.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+const TODAY = todayStr();
+function focusWeek(){ // الأسبوع الجاري، أو القادم في العطلة
+  for (let w=FIRST_WEEK; w<=LAST_WEEK; w++){ const ds = DAYS.filter(d=>d.week===w); if (TODAY <= ds[ds.length-1].date) return w; }
+  return LAST_WEEK;
+}
+const WEEK = focusWeek();
+const runningNow = DAYS.some(d=>d.date===TODAY);
+
+/* الترويسة */
+(function(){
+  const h = new Date().getHours();
+  $("hello").textContent = h < 12 ? "صباح الخير" : "مساء الخير";
+  const now = new Date();
+  const g = new Intl.DateTimeFormat("ar-SA-u-ca-gregory-nu-latn",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(now);
+  const hj = new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric"}).format(now);
+  $("today-date").textContent = `${g} · ${hj}`;
+  $("week-lbl").textContent = `الأسبوع ${WEEK} من ${LAST_WEEK}`;
+  $("week-bar").style.width = Math.round(WEEK / LAST_WEEK * 100) + "%";
+  $("k-week-s").textContent = `الأسبوع ${WEEK}`;
+})();
+
+/* بطاقات الخدمات */
+function renderServices(counts){
+  $("svc-list").innerHTML = SERVICES.map(s=>{
+    const ext = /^https?:/.test(s.href);
+    const n = counts && s.api ? counts[s.key] : null;
+    const badge = n == null ? "" : `<span class="badge"><i></i>${n ? `${nf(n)} ${n===1?"حجز":"حجوزات"} هذا الأسبوع` : "متاح هذا الأسبوع"}</span>`;
+    return `<li class="svc" style="--c:${s.c}"><a href="${s.href}"${ext?' target="_blank" rel="noopener"':""}>
+      <span class="ico"><svg viewBox="0 0 48 48" aria-hidden="true">${FRAME}${ICONS[s.key]||""}</svg></span>
+      <span><h3>${esc(s.title)}</h3><p>${esc(s.desc)}</p>${badge}</span></a></li>`;
+  }).join("");
+}
+renderServices(null);
+
+/* ===== جلب البيانات وتوحيدها ===== */
+const LAB_LABELS = { chem:"مختبر الكيمياء", bio:"مختبر الأحياء (1)", bio2:"مختبر الأحياء (2)", phys:"مختبر الفيزياء" };
+const LAB_DAY = { sun:0, mon:1, tue:2, wed:3, thu:4 };
+const LAB_START = Date.UTC(2026, 7, 23);
+const RES_TYPES = { visit:"زيارة صفية", program:"نشاط أو برنامج" };
+const yes = v => v === true || v === "TRUE" || v === "true" || v === "نعم";
+function normalize(s, r){
+  if (s.kind === "lab"){
+    return (r.data||[]).filter(d=>d && d.week).map(d=>{
+      const date = new Date(LAB_START + ((+d.week-1)*7 + (LAB_DAY[d.day]??0)) * 86400000).toISOString().slice(0,10);
+      return { svc:s.key, date, period:+d.period, teacher:d.teacher, detail:[LAB_LABELS[d.lab]||d.lab, d.experiment].filter(Boolean).join(" — "), done:yes(d.completed) };
+    });
+  }
+  return (r.bookings||[]).map(b=>{
+    let detail = "", period = b.period != null && b.period !== "" ? +b.period : null, label = "";
+    if (s.key==="visit") detail = b.lesson || "";
+    if (s.key==="res") detail = [RES_TYPES[b.type], b.program, b.grade].filter(Boolean).join(" — ");
+    if (s.key==="club") detail = b.grade || "";
+    if (s.key==="train"){ detail = b.purpose || "دورة أو لقاء"; if (+b.span===2) label = `الحصتان ${PN[period-1]} و${PN[period]}`; }
+    if (s.key==="meet"){ detail = b.topic || "اجتماع"; if (String(b.slot)==="B"){ period = 3.5; label = "الفسحة"; } else period = +b.slot; }
+    if (s.key==="studio") detail = b.program || "";
+    if (s.key==="exam") detail = [b.title, b.cls].filter(Boolean).join(" — ");
+    if (s.key==="quiz"){ detail = [b.title, b.classes].filter(Boolean).join(" — "); period = null; }
+    return { svc:s.key, date:String(b.date||"").slice(0,10), period, label, teacher:b.teacher || b.owner || "", detail, done:yes(b.done) };
+  });
+}
+async function fetchJson(url, ms){
+  const ctl = new AbortController(), t = setTimeout(()=>ctl.abort(), ms);
+  try { const r = await fetch(url, { signal:ctl.signal }); return await r.json(); } finally { clearTimeout(t); }
+}
+async function loadAll(){
+  const sources = SERVICES.filter(s=>s.api);
+  const results = await Promise.allSettled(sources.map(s=>
+    fetchJson(s.api + (s.kind==="lab" ? "?action=list&t=" : "?t=") + Date.now(), 15000).then(r=>{
+      if (!r || r.ok === false) throw new Error("api"); return normalize(s, r);
+    })));
+  const items = [], failed = [];
+  results.forEach((res,i)=>{ if (res.status==="fulfilled") items.push(...res.value); else failed.push(sources[i].title); });
+  render(items.filter(x=>weekOf(x.date)), failed, sources.length);
+}
+
+/* ===== العرض ===== */
+const svcBy = k => SERVICES.find(s=>s.key===k);
+function render(items, failed, total){
+  const todayItems = items.filter(x=>x.date===TODAY);
+  const weekItems = items.filter(x=>weekOf(x.date)===WEEK);
+  const past = items.filter(x=>x.date < TODAY && !svcBy(x.svc).noDone);
+  const doneN = past.filter(x=>x.done).length;
+  $("k-today").textContent = runningNow ? nf(todayItems.length) : "—";
+  $("k-today-s").textContent = runningNow ? "في جميع الخدمات" : "لا يوجد دوام اليوم";
+  $("k-week").textContent = nf(weekItems.length);
+  $("k-all").textContent = nf(items.length);
+  $("k-done").textContent = past.length ? Math.round(doneN / past.length * 100) + "٪" : "—";
+  $("k-done-s").textContent = past.length ? `${nf(doneN)} من ${nf(past.length)} حجزًا ماضيًا` : "لا توجد حجوزات ماضية بعد";
+
+  const counts = {}; SERVICES.forEach(s=>counts[s.key]=0); weekItems.forEach(x=>counts[x.svc]++);
+  renderServices(counts);
+
+  // أعمدة أفقية: حجوزات الأسبوع حسب الخدمة
+  const rows = SERVICES.filter(s=>s.api).map(s=>({ s, n:counts[s.key] })).sort((a,b)=>b.n-a.n);
+  const max = Math.max(1, ...rows.map(r=>r.n));
+  $("hbar-sub").textContent = `الأسبوع ${WEEK} — ${nf(weekItems.length)} حجزًا`;
+  $("hbar").innerHTML = rows.map(r=>`<div class="hrow" data-tip="${esc(r.s.title)}: ${nf(r.n)}"><span class="n">${esc(r.s.title.replace(/^حجز /,""))}</span><span class="b"><i style="width:${r.n/max*100}%"></i></span><span class="val">${nf(r.n)}</span></div>`).join("");
+
+  // أعمدة رأسية: الحجوزات عبر الأسابيع
+  const weeks = []; for (let w=FIRST_WEEK; w<=LAST_WEEK; w++) weeks.push({ w, n:items.filter(x=>weekOf(x.date)===w).length });
+  const wmax = Math.max(1, ...weeks.map(x=>x.n)), peak = weeks.reduce((a,b)=>b.n>a.n?b:a, weeks[0]);
+  $("cols").setAttribute("aria-label", "الحجوزات لكل أسبوع: " + weeks.map(x=>`الأسبوع ${x.w}: ${x.n}`).join("، "));
+  $("cols").innerHTML = weeks.map(x=>`<div class="col${x.w===WEEK?" cur":""}" data-tip="الأسبوع ${x.w}: ${nf(x.n)} حجزًا"><i style="height:${x.n/wmax*100}%"></i>${(x.w===WEEK || (x===peak && x.n)) ? `<span class="tv" style="bottom:${x.n/wmax*100}%">${nf(x.n)}</span>` : ""}</div>`).join("");
+  $("xl").innerHTML = weeks.map(x=>`<span class="${x.w===WEEK?"cur":""}">${x.w}</span>`).join("");
+  $("wtable").innerHTML = `<tr><th>الأسبوع</th><th>الحجوزات</th></tr>` + weeks.map(x=>`<tr><td>${x.w}</td><td>${x.n}</td></tr>`).join("");
+
+  // اليوم
+  const day = DAYS.find(d=>d.date===TODAY);
+  $("today-sub").textContent = runningNow ? `${day.day} — ${nf(todayItems.length)} ${todayItems.length===1?"حجز":"حجوزات"} في جميع الخدمات` : "لا يوجد دوام اليوم.";
+  const sorted = todayItems.slice().sort((a,b)=>(a.period??0)-(b.period??0));
+  $("today-list").innerHTML = !runningNow ? `<div class="empty">لا يوجد دوام اليوم. تقدر تحجز للأيام القادمة من الخدمات.</div>`
+    : sorted.length ? sorted.map(x=>{ const s = svcBy(x.svc);
+      const when = x.label || (x.period==null ? "طوال اليوم" : `الحصة ${PN[x.period-1]||x.period}`);
+      return `<div class="ev" style="--c:${s.c}"><span class="t">${esc(when)}</span><div><span class="svcn"><i></i>${esc(s.title.replace(/^حجز /,""))}</span> ${x.done?'<span class="ok">✓ تم التنفيذ</span>':""}<div><b>${esc(x.teacher)}</b>${x.detail?` <span class="m">— ${esc(x.detail)}</span>`:""}</div></div></div>`; }).join("")
+    : `<div class="empty">لا توجد حجوزات اليوم حتى الآن.</div>`;
+
+  const t = new Intl.DateTimeFormat("ar-SA-u-nu-latn",{hour:"numeric",minute:"2-digit"}).format(new Date());
+  $("status").textContent = `آخر تحديث ${t}` + (failed.length ? ` — تعذّر تحميل: ${failed.join("، ")}` : "");
+}
+
+/* تلميح عند المرور على الأعمدة */
+const tip = $("tip");
+document.addEventListener("pointermove", e=>{
+  const el = e.target.closest("[data-tip]");
+  if (!el){ tip.classList.remove("on"); return; }
+  tip.textContent = el.dataset.tip; tip.classList.add("on");
+  const x = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, e.clientX - tip.offsetWidth/2));
+  tip.style.left = x + "px"; tip.style.top = (e.clientY - 40) + "px";
+});
+
+loadAll();
+setInterval(loadAll, 5 * 60 * 1000);
 </script>
 </body>
 </html>
