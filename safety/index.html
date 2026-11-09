@@ -119,8 +119,9 @@ footer a{display:inline-grid;place-items:center;width:32px;height:32px;border-ra
 
 /* ===== الطباعة: التقرير الرسمي ===== */
 @media print{
-  @page{size:A4;margin:14mm}
-  body{background:#fff;color:#000;font-size:12pt}
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important;color:#000;font-size:12pt}
+  #print{padding:12mm 14mm 10mm}
   body > *:not(#print){display:none!important}
   #print{display:block!important}
   .pr-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #07277A;padding-bottom:8px;margin-bottom:14px}
@@ -133,14 +134,14 @@ footer a{display:inline-grid;place-items:center;width:32px;height:32px;border-ra
   table.list td{font-size:9.5pt}
   .dt{white-space:nowrap}
   table.list th{width:auto}
-  .pr-photo{max-width:100%;max-height:300px;border:1px solid #999;border-radius:6px;margin-top:6px}
-  .sign{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;text-align:center;font-size:10.5pt}
+  .pr-photo{max-width:100%;max-height:250px;border:1px solid #999;border-radius:6px;margin-top:6px}
+  .sign{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px;break-inside:avoid;text-align:center;font-size:10.5pt}
   .sign div{border-top:1px solid #000;padding-top:6px}
   h2.pr-sec{font-size:12.5pt;color:#07277A;margin:14px 0 4px}
   .pr-sum{display:flex;gap:10px;margin:8px 0}
   .pr-sum div{flex:1;border:1px solid #999;border-radius:6px;padding:6px;text-align:center;font-size:10pt}
   .pr-sum b{display:block;font-size:15pt}
-  .pr-foot{margin-top:18px;font-size:9pt;color:#555;text-align:center}
+  .pr-foot{margin-top:10px;font-size:9pt;color:#555;text-align:center}
 }
 </style>
 </head>
@@ -345,7 +346,7 @@ function renderForm(){
   if (photoData) $("photo-prev").src = photoData;
   $("submit").disabled = !formReady();
 }
-function hours(a, b){ const t = s => Date.parse(s.replace(" ", "T") + ":00+03:00"); return (t(b) - t(a)) / 3600000; }
+function hours(a, b){ const t = s => { const m = /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})/.exec(String(s||"").trim()); return m ? Date.UTC(+m[1], m[2]-1, +m[3], m[4]-3, +m[5]) : NaN; }; return (t(b) - t(a)) / 3600000; }
 function fmtDur(h){ if (!(h >= 0)) return "—"; if (h < 1) return "أقل من ساعة"; if (h < 48) return nf(Math.round(h)) + " ساعة"; return nf(Math.round(h/24)) + " يوم"; }
 function renderKpis(){
   const fixed = reports.filter(r => r.status === "fixed"), open = reports.filter(r => r.status !== "fixed");
