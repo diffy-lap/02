@@ -410,6 +410,9 @@ const FIRST_WEEK = 6, LAST_WEEK = 17, BREAK_AFTER = 13;
 const START_UTC = Date.UTC(2026, 8, 27); // الأحد 27 سبتمبر 2026 = الأسبوع 6
 const HOLIDAYS = ["2026-10-25"];
 const MAX_PER_DAY = 2;
+// أيام استثنائية: عدد الحصص الإضافية فوق الحد اليومي
+const EXTRA_DAYS = { "2026-11-10": 2 };
+const maxFor = date => MAX_PER_DAY + (EXTRA_DAYS[date] || 0);
 const DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس"];
 const PERIOD_NAMES = ["الأولى","الثانية","الثالثة","الرابعة","الخامسة"];
 const weekStart = w => START_UTC + ((w-FIRST_WEEK) + (w>BREAK_AFTER?1:0)) * 7 * 86400000;
@@ -461,7 +464,7 @@ function demoApi(method, body){
   }
   if (body.action==="book"){
     const same = db.bookings.filter(b=>b.date===body.date);
-    if (same.length >= MAX_PER_DAY) return { ...out(), ok:false, error:"اكتمل حجز هذا اليوم (حصتان)" };
+    if (same.length >= maxFor(body.date)) return { ...out(), ok:false, error:"اكتمل حجز هذا اليوم" };
     if (same.some(b=>+b.period===+body.period)) return { ...out(), ok:false, error:"هذه الحصة محجوزة" };
     const d = DAYS.find(x=>x.date===body.date);
     db.bookings.push({ id:id(), type:body.type, week:d.week, date:d.date, day:d.day, period:+body.period, teacher:body.teacher, grade:body.grade, program:body.program||"", done:false });
@@ -548,13 +551,14 @@ function renderBoard(){
   $("board").innerHTML = DAYS.filter(d=>d.week===state.week).map(d=>{
     if (d.holiday) return `<div class="day">${dayHead(d)}<div class="holiday">إجازة</div></div>`;
     const taken = bookings.filter(b=>b.date===d.date);
-    if (taken.length >= MAX_PER_DAY) return `<div class="day">${dayHead(d)}<div class="full-day">اكتمل الحجز لهذا اليوم</div></div>`;
+    if (taken.length >= maxFor(d.date)) return `<div class="day">${dayHead(d)}<div class="full-day">اكتمل الحجز لهذا اليوم</div></div>`;
     const past = d.date < t;
     const slots = PERIOD_NAMES.map((p,i)=>{
       const busy = taken.some(b=>+b.period===i+1);
       return `<button class="slot" ${past||busy?"disabled":""} aria-pressed="${state.date===d.date&&state.period===i+1}" data-date="${d.date}" data-period="${i+1}" aria-label="${d.day} الحصة ${p}${busy?" محجوزة":""}">${p}</button>`;
     }).join("");
-    const left = !past && taken.length===1 ? `<span class="left">متبقي حصة واحدة في هذا اليوم</span>` : "";
+    const rem = maxFor(d.date) - taken.length;
+    const left = !past && EXTRA_DAYS[d.date] ? `<span class="left">يوم استثنائي: متاح ${rem === 1 ? "حصة واحدة" : rem === 2 ? "حصتان" : rem + " حصص"}</span>` : (!past && rem===1 ? `<span class="left">متبقي حصة واحدة في هذا اليوم</span>` : "");
     return `<div class="day">${dayHead(d)}<div class="slots">${slots}${left}</div></div>`;
   }).join("");
 }
