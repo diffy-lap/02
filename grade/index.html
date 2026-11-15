@@ -1128,7 +1128,16 @@ const Live = {
     $("#camClose").onclick=()=>this.stop(true);
     try{
       this.stream=await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
-    }catch(e){ this.stop(false); toast("ما قدرت أشغّل الكاميرا. اسمح للمتصفح باستخدامها، أو استخدم تحميل الصور."); return; }
+    }catch(e){ this.stop(false);
+      const L=$("#layer"); L.innerHTML=`<div class="modal"><div class="card"><h2>الكاميرا ما اشتغلت</h2>
+        <p class="small">المتصفح ما قدر يطلب إذن الكاميرا. جرّب:</p>
+        <ol class="small" style="padding-inline-start:18px;margin:6px 0">
+          <li>اقفل الفقاعات العائمة (ماسنجر، واتساب، فلتر الشاشة، أو أي تطبيق يظهر فوق التطبيقات) وارجع جرّب.</li>
+          <li>أو اضغط القفل 🔒 جنب الرابط فوق ← الأذونات ← الكاميرا ← سماح، وحدّث الصفحة.</li>
+        </ol>
+        <p class="small muted">وتقدر تصحح الحين بزر «تصوير ورقة» أو «تحميل صور الأوراق».</p>
+        <div class="row"><button class="btn pri" id="camErrOk">تمام</button></div></div></div>`;
+      $("#camErrOk").onclick=()=>{L.innerHTML="";}; return; }
     const v=$("#camV"); v.srcObject=this.stream; try{ await v.play(); }catch(e){}
     this.status("وجّه الكاميرا للورقة حتى تظهر المربعات السوداء الأربعة");
     this.loop();
