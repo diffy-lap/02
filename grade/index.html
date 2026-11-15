@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 /* Layout: one narrow column of cards (phone first); exam view = tab strip + one panel. */
 :root{
@@ -105,6 +106,22 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:30;padding:16px}
 .modal .card{max-width:420px;width:100%}
 .ltr{direction:ltr;unicode-bidi:isolate}
+.cam{position:fixed;inset:0;background:#000;z-index:40;display:flex;flex-direction:column;color:#fff}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .guide{position:absolute;inset:7% 9%;border:2px dashed rgba(255,255,255,.55);border-radius:14px;pointer-events:none}
+.cam .guide i{position:absolute;width:26px;height:26px;background:rgba(255,255,255,.75)}
+.cam .guide i:nth-child(1){top:-2px;right:-2px}.cam .guide i:nth-child(2){top:-2px;left:-2px}.cam .guide i:nth-child(3){bottom:-2px;right:-2px}.cam .guide i:nth-child(4){bottom:-2px;left:-2px}
+.cam.found .guide{border-color:#22CC77;border-style:solid}
+.cam .bar{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;background:linear-gradient(#000c,#0000)}
+.cam .bar b{font-size:16px}.cam .bar .btn{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff}
+.cam .msg{position:relative;z-index:2;margin-top:auto;padding:14px 16px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(#0000,#000d);text-align:center}
+.cam .msg .st{font-size:15px;opacity:.9}
+.cam .res{display:inline-block;margin-top:8px;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.12);font-size:15px}
+.cam .res.ok{background:#1f8a4cE6}.cam .res.bad{background:#b7791fE6}
+.cam .res .sc{font-size:26px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:9px 14px;cursor:pointer;font-weight:500}
+.seg button.on{background:var(--accent);color:#fff}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -152,7 +169,7 @@ function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTim
 
 /* ====================== exam model ====================== */
 function newExam(o){
-  const ex = {id:uid(), name:o.name||"اختبار جديد", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
+  const ex = {id:uid(), name:o.name||"اختبار جديد", subject:o.subject||"", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
   fixKeys(ex); return ex;
 }
 function fixKeys(ex){
@@ -204,7 +221,7 @@ async function renderSheet(ex, pxPerMm=11.811){
   g.textAlign="left"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("بوابة واعد",38*k,11*k);
   g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("خدمة التصحيح الآلي",38*k,15.5*k);
   g.textAlign="center"; g.fillStyle="#000"; g.font=F(700,4.6); g.fillText(ex.name, 105*k, 22.5*k);
-  g.font=F(400,3); g.fillStyle="#555"; g.fillText("ورقة الإجابة   •   "+ex.nq+" سؤال", 105*k, 27*k);
+  g.font=F(500,3.1); g.fillStyle="#444"; g.fillText((ex.subject?"المادة: "+ex.subject+"   •   ":"")+"ورقة الإجابة   •   "+ex.nq+" سؤال", 105*k, 27.3*k);
   g.textAlign="right"; g.font=F(500,3.6); g.fillStyle="#000";
   g.fillText("اسم الطالب: ..................................................", 192*k, 33.5*k);
   g.textAlign="left"; g.fillText("الفصل: ..............", 20*k, 33.5*k);
@@ -234,7 +251,7 @@ async function renderSheet(ex, pxPerMm=11.811){
     g.strokeStyle="#666"; g.lineWidth=0.25*k;
     q.opts.forEach((b,o)=>bubble(g,k,b,LET[o],3.4));
   });
-  g.fillStyle="#888"; g.font=F(400,2.6); g.textAlign="center"; g.fillText("صوّر الورقة كاملة ومستوية بحيث تظهر المربعات السوداء الأربعة", 105*k, 290*k);
+  g.fillStyle="#888"; g.font=F(400,2.6); g.textAlign="center"; g.fillText("وجّه الكاميرا للورقة كاملة ومستوية بحيث تظهر المربعات السوداء الأربعة", 105*k, 290*k);
   return cv;
 }
 let _logo=null;
@@ -249,8 +266,9 @@ function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x
 /* ====================== OMR: reading a photo ====================== */
 const OMR = {
   toGray(img, maxSide=1600){
-    const s=Math.min(1, maxSide/Math.max(img.width,img.height));
-    const w=Math.round(img.width*s), h=Math.round(img.height*s);
+    const IW=img.videoWidth||img.width, IH=img.videoHeight||img.height;
+    const s=Math.min(1, maxSide/Math.max(IW,IH));
+    const w=Math.round(IW*s), h=Math.round(IH*s);
     const cv=document.createElement("canvas"); cv.width=w; cv.height=h; const g=cv.getContext("2d");
     g.drawImage(img,0,0,w,h); const d=g.getImageData(0,0,w,h).data; const gray=new Uint8ClampedArray(w*h);
     for(let i=0,j=0;i<gray.length;i++,j+=4) gray[i]=(d[j]*299+d[j+1]*587+d[j+2]*114)/1000;
@@ -284,10 +302,10 @@ const OMR = {
     return out;
   },
   findCorners(G){
-    const m=this.darkMask(G), all=this.blobs(m,G.w,G.h), N=G.w*G.h;
+    const m=this.darkMask(G), all=this.blobs(m,G.w,G.h), N=G.w*G.h; this._blobs=all;
     const c=all.filter(b=>b.n>=40 && b.bw>=6 && b.bh>=6 && b.n<N*0.02 && b.bw/b.bh>0.5 && b.bw/b.bh<2 && b.fill>0.72)
       .sort((a,b)=>b.n-a.n).slice(0,14);
-    let best=null;
+    const cands=[];
     for(let a=0;a<c.length;a++)for(let b=a+1;b<c.length;b++)for(let d=b+1;d<c.length;d++)for(let e=d+1;e<c.length;e++){
       const q=[c[a],c[b],c[d],c[e]]; const ns=q.map(t=>t.n); if(Math.max(...ns)/Math.min(...ns)>3.2) continue;
       const P=orderClockwise(q); if(!P) continue;
@@ -295,23 +313,35 @@ const OMR = {
       const side=[0,1,2,3].map(i=>Math.hypot(P[(i+1)%4].cx-P[i].cx,P[(i+1)%4].cy-P[i].cy));
       const r1=side[0]/side[2], r2=side[1]/side[3]; if(r1<0.6||r1>1.67||r2<0.6||r2>1.67) continue;
       const asp=(side[0]+side[2])/(side[1]+side[3]); if(!((asp>0.45&&asp<0.95)||(asp>1.05&&asp<2.2))) continue;
+      // fiducial size must match ONE sheet (rejects a quad spanning two sheets printed on one page)
+      const fr=Math.sqrt(ns.reduce((a,b)=>a+b,0)/4)/Math.min(...side); if(fr<0.03||fr>0.08) continue;
       const sc=A*Math.min(...ns)/Math.max(...ns);
-      if(!best||sc>best.sc) best={sc,P};
+      cands.push({sc,P});
     }
-    return best?best.P:null;
+    return cands.sort((x,y)=>y.sc-x.sc).slice(0,30).map(x=>x.P);
   },
-  read(img, ex){
-    const G=this.toGray(img); const P=this.findCorners(G);
-    if(!P) return {ok:false, reason:"corners", G};
-    // try 4 rotations; pick the one where the orientation mark is dark
-    let bestH=null, bestDark=-1;
-    for(let r=0;r<4;r++){
-      const dst=[0,1,2,3].map(i=>P[(i+r)%4]);
-      const H=homography(SHEET.fid, dst.map(p=>[p.cx,p.cy]));
-      const v=255-this.mean(G,H,SHEET.orient[0],SHEET.orient[1],1.4);
-      if(v>bestDark){bestDark=v;bestH=H;}
+  read(img, ex, maxSide){
+    const G=this.toGray(img, maxSide||1600); const cands=this.findCorners(G);
+    // each candidate quad: try 4 rotations, keep the one whose orientation mark is dark,
+    // and accept the quad only if that mark is clearly darker than the paper (a real single sheet)
+    let H=null;
+    for(const P of cands){
+      let bestH=null, bestO=1e9;
+      for(let r=0;r<4;r++){
+        const dst=[0,1,2,3].map(i=>P[(i+r)%4]);
+        const h=homography(SHEET.fid, dst.map(p=>[p.cx,p.cy]));
+        const o=this.mean(G,h,SHEET.orient[0],SHEET.orient[1],1.4);
+        if(o<bestO){bestO=o;bestH=h;}
+      }
+      const w=SHEET.white.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,3),0)/4;
+      const kk=SHEET.fid.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,2.5),0)/4;
+      const side=[[24,14],[14,24],[24,24],[105,14],[40,283],[105,283],[170,283],[14,100],[14,200],[196,100],[196,200]].map(([x,y])=>this.mean(G,bestH,x,y,1.2)); // blank margins must be light
+      // the orientation mark must be its own small square blob exactly where this quad predicts it
+      const [ox,oy]=applyH(bestH,SHEET.orient[0],SHEET.orient[1]), fn=P.reduce((t,q)=>t+q.n,0)/4, fs=Math.sqrt(fn);
+      const om=this._blobs.find(q=>Math.hypot(q.cx-ox,q.cy-oy)<fs*0.45 && q.n>fn*0.1 && q.n<fn*0.5);
+      if(om && w-bestO > 0.6*(w-kk) && Math.min(...side) > kk+0.55*(w-kk)){ H=bestH; break; }
     }
-    const H=bestH;
+    if(!H) return {ok:false, reason:"corners", G};
     const W=SHEET.white.map(([x,y])=>this.mean(G,H,x,y,3));
     const B=SHEET.fid.map(([x,y])=>this.mean(G,H,x,y,2.5));
     const interp=(arr,x,y)=>{ const u=(x-14)/182, v=(y-14)/269; return (1-u)*(1-v)*arr[0]+u*(1-v)*arr[1]+u*v*arr[2]+(1-u)*v*arr[3]; };
@@ -380,13 +410,14 @@ function homeHTML(){
   const list=Store.exams.slice().sort((a,b)=>b.created-a.created).map(ex=>{
     const missing=[...Array(ex.nforms).keys()].some(f=>!keyComplete(ex,f));
     return `<button class="exam-item" data-open="${ex.id}"><span><b>${esc(ex.name)}</b>
-      <span class="chips"><span class="chip">${ex.nq} سؤال</span><span class="chip">${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</span><span class="chip">${ex.results.length} ورقة مصححة</span>${missing?'<span class="chip warn">المفتاح ناقص</span>':""}</span></span><span class="muted">‹</span></button>`;}).join("");
+      <span class="chips">${ex.subject?`<span class="chip">${esc(ex.subject)}</span>`:""}<span class="chip">${ex.nq} سؤال</span><span class="chip">${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</span><span class="chip">${ex.results.length} ورقة مصححة</span>${missing?'<span class="chip warn">المفتاح ناقص</span>':""}</span></span><span class="muted">‹</span></button>`;}).join("");
   return `<header class="top"><div><h1>التصحيح الآلي</h1><div class="sub">صحّح أوراق الاختيار من متعدد بتصويرها بالجوال</div></div>
     <button class="btn" id="goRoster">قائمة الطلاب</button></header>
     ${storageNote()}
     <div class="card"><h2>الاختبارات</h2><div class="examlist">${list||'<p class="muted">ما فيه اختبارات بعد. أنشئ أول اختبار من الأسفل.</p>'}</div></div>
     <div class="card"><h2>اختبار جديد</h2>
-      <div class="row"><label class="f" style="flex-basis:100%">اسم الاختبار<input type="text" id="nName" placeholder="مثال: اختبار الباب السادس"></label></div>
+      <div class="row"><label class="f" style="flex-basis:60%">اسم الاختبار<input type="text" id="nName" placeholder="مثال: اختبار الباب السادس"></label>
+        <label class="f">المادة<input type="text" id="nSubj" list="subjects" placeholder="اختر أو اكتب"></label></div>${subjectsList()}
       <div class="row" style="margin-top:8px">
         <label class="f">عدد الأسئلة<input type="number" id="nQ" min="1" max="40" value="20"></label>
         <label class="f">عدد الخيارات<select id="nOpt"><option value="3">3 (أ ب ج)</option><option value="4">4 (أ ب ج د)</option></select></label>
@@ -417,7 +448,7 @@ function parseRosterRows(rows){
 function examHTML(){
   const ex=UI.exam;
   const tabs=[["key","المفتاح"],["sheet","ورقة الإجابة"],["scan","التصحيح"],["results","النتائج"],["analysis","تحليل الأسئلة"],["settings","الإعدادات"]];
-  return `<header class="top"><div><h1>${esc(ex.name)}</h1><div class="sub">${ex.nq} سؤال • ${ex.nopt} خيارات • ${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</div></div><button class="btn" id="back">كل الاختبارات</button></header>
+  return `<header class="top"><div><h1>${esc(ex.name)}</h1><div class="sub">${ex.subject?esc(ex.subject)+" • ":""}${ex.nq} سؤال • ${ex.nopt} خيارات • ${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</div></div><button class="btn" id="back">كل الاختبارات</button></header>
   <nav class="tabs">${tabs.map(([k,t])=>`<button class="tab ${UI.tab===k?"on":""}" data-tab="${k}">${t}</button>`).join("")}</nav>
   <section id="panel">${({key:keyHTML,sheet:sheetHTML,scan:scanHTML,results:resultsHTML,analysis:analysisHTML,settings:settingsHTML})[UI.tab]()}</section>`;
 }
@@ -436,22 +467,51 @@ function keyHTML(){
     <div class="keygrid">${key.map((v,i)=>`<div class="krow"><span class="n">${i+1}</span>${Array.from({length:ex.nopt},(_,o)=>`<button class="opt ${v===o?"on":""}" data-k="${i}:${o}" aria-label="سؤال ${i+1} الخيار ${LET[o]}">${LET[o]}</button>`).join("")}</div>`).join("")}</div></div>`;
 }
 function sheetHTML(){
+  const n=UI.perPage||1;
   return `<div class="card"><h2>ورقة الإجابة</h2>
-    <p class="small muted">ورقة وحدة تصلح لكل النماذج: الطالب يظلل رقمه ورمز نموذجه. اطبعها بمقاس A4 بالأبيض والأسود، ولا تصغّرها لدرجة تختفي فيها المربعات السوداء.</p>
-    <canvas id="sheetPrev" class="sheetprev" aria-label="معاينة ورقة الإجابة"></canvas>
-    <div class="row"><button class="btn pri" id="dlSheet" >تحميل الورقة (صورة PNG)</button>
+    <p class="small muted">ورقة وحدة تصلح لكل النماذج: الطالب يظلل رقمه ورمز نموذجه. ملف PDF بجودة طباعة عالية على مقاس A4، اطبعه بالأبيض والأسود بحجمه الفعلي (100%) بدون «ملاءمة للصفحة».</p>
+    <div class="row" style="margin:6px 0 4px"><span class="small muted">عدد النماذج في الصفحة:</span>
+      <div class="seg" role="group" aria-label="عدد النماذج في الصفحة"><button data-pp="1" class="${n===1?"on":""}">نموذج واحد</button><button data-pp="2" class="${n===2?"on":""}">نموذجين</button></div></div>
+    ${n===2?'<p class="small muted">نموذجين جنب بعض على ورقة A4 بالعرض، قصّها من الخط المنقط في النص. كل نصف يُصحَّح لحاله.</p>':""}
+    <canvas id="sheetPrev" class="sheetprev" style="${n===2?"max-width:560px":""}" aria-label="معاينة ورقة الإجابة"></canvas>
+    <div class="row"><button class="btn pri" id="dlSheet">تحميل ورقة الإجابة (PDF)</button>
     </div></div>`;
+}
+function subjectsList(){
+  const S=["الكيمياء","الفيزياء","الأحياء","علم البيئة","علوم الأرض والفضاء","الرياضيات","اللغة العربية","اللغة الإنجليزية","الدراسات الإسلامية","الدراسات الاجتماعية","التاريخ","الجغرافيا","الحاسب وتقنية المعلومات","التقنية الرقمية","التفكير الناقد","المهارات الحياتية","التربية المهنية","الإدارة المالية","التربية البدنية"];
+  return `<datalist id="subjects">${S.map(x=>`<option value="${x}">`).join("")}</datalist>`;
+}
+/* sheet pages: one A4 portrait sheet, or two sheets side by side on A4 landscape (each = A5) */
+async function sheetPage(ex, perPage, dpi){
+  const mm=dpi/25.4;
+  if(perPage===1) return {cv:await renderSheet(ex, mm), w:210, h:297};
+  const s=148.5/210, one=await renderSheet(ex, mm*s);
+  const cv=document.createElement("canvas"); cv.width=Math.round(297*mm); cv.height=Math.round(210*mm);
+  const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height);
+  const half=148.5*mm; g.drawImage(one,0,0,half,cv.height); g.drawImage(one,half,0,half,cv.height);
+  g.strokeStyle="#999"; g.lineWidth=Math.max(1,0.25*mm); g.setLineDash([2*mm,1.6*mm]); g.beginPath(); g.moveTo(half,4*mm); g.lineTo(half,cv.height-4*mm); g.stroke();
+  return {cv, w:297, h:210};
+}
+async function downloadSheetPdf(ex, perPage){
+  if(!window.jspdf){ toast("مكتبة PDF ما تحمّلت، تأكد من الاتصال."); return; }
+  toast("جاري تجهيز ملف PDF…");
+  const P=await sheetPage(ex, perPage, 400);
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({orientation:P.w>P.h?"landscape":"portrait", unit:"mm", format:"a4", compress:true});
+  pdf.addImage(P.cv.toDataURL("image/png"), "PNG", 0, 0, P.w, P.h, undefined, "FAST");
+  const blob=pdf.output("blob");
+  await DL.save({filename:"ورقة إجابة - "+ex.name+(perPage===2?" (نموذجين)":"")+".pdf", data:blob});
 }
 function scanHTML(){
   const ex=UI.exam; const missing=[...Array(ex.nforms).keys()].filter(f=>!keyComplete(ex,f));
   let h=`<div class="card"><h2>تصحيح الأوراق</h2>`;
   if(missing.length) h+=`<div class="note warn small" style="margin-bottom:10px">مفتاح ${missing.map(f=>"نموذج "+FORM_LET[f]).join("، ")} ناقص. الأسئلة بدون مفتاح ما تنحسب.</div>`;
   if(UI.review) h+=reviewHTML();
-  else h+=`<label class="scanbox" for="shot"><div style="font-size:17px;font-weight:700">صوّر ورقة إجابة</div>
-      <div class="small muted">أو اختر عدة صور من الألبوم دفعة وحدة</div><input type="file" id="shot" accept="image/*" capture="environment">
-    </label><div class="row" style="margin-top:10px;justify-content:center"><label class="btn" for="many">اختيار صور من الألبوم</label><input type="file" id="many" accept="image/*" multiple style="display:none">
+  else h+=`<button class="scanbox" id="liveCam" style="width:100%;background:var(--surface);cursor:pointer;color:inherit"><div style="font-size:18px;font-weight:700">التصحيح بالكاميرا مباشرة</div>
+      <div class="small muted">شغّل الكاميرا ووجّهها للورقة، تنقرأ الدرجة وتنحفظ تلقائيًا، وبعدها حط الورقة اللي بعدها</div></button>
+    <div class="row" style="margin-top:10px;justify-content:center"><label class="btn" for="many">تحميل صور الأوراق</label><input type="file" id="many" accept="image/*" multiple style="display:none">
+    <label class="btn" for="shot">تصوير ورقة</label><input type="file" id="shot" accept="image/*" capture="environment" style="display:none">
     <button class="btn ghost" id="manual">إدخال يدوي بدون صورة</button></div>
-    <p class="small muted" style="margin-top:12px">نصائح: حط الورقة على سطح داكن ومستوي، وخل الجوال فوقها مباشرة، وتأكد إن المربعات السوداء الأربعة ظاهرة.</p>`;
+    <p class="small muted" style="margin-top:12px">نصائح: حط الورقة على سطح داكن ومستوي، وخل الجوال فوقها مباشرة، وتأكد إن المربعات السوداء الأربعة ظاهرة. الورقة اللي قراءتها غير واضحة تنفتح لك للمراجعة قبل الحفظ.</p>`;
   return h+`</div>`;
 }
 function reviewHTML(){
@@ -514,7 +574,8 @@ function analysisHTML(){
 function settingsHTML(){
   const ex=UI.exam;
   return `<div class="card"><h2>إعدادات الاختبار</h2>
-    <div class="row"><label class="f" style="flex-basis:100%">اسم الاختبار<input type="text" id="sName" value="${esc(ex.name)}"></label></div>
+    <div class="row"><label class="f" style="flex-basis:60%">اسم الاختبار<input type="text" id="sName" value="${esc(ex.name)}"></label>
+    <label class="f">المادة<input type="text" id="sSubj" list="subjects" value="${esc(ex.subject||"")}"></label></div>${subjectsList()}
     <div class="row" style="margin-top:8px"><label class="f">عدد الأسئلة<input type="number" id="sQ" min="1" max="40" value="${ex.nq}"></label>
     <label class="f">عدد الخيارات<select id="sOpt"><option value="3" ${ex.nopt==3?"selected":""}>3</option><option value="4" ${ex.nopt==4?"selected":""}>4</option></select></label>
     <label class="f">عدد النماذج<select id="sF">${[1,2,3,4].map(v=>`<option ${ex.nforms==v?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -530,7 +591,7 @@ function bind(){
   on("#back","click",()=>{UI.view="home";UI.review=null;UI.queue=[];render();});
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{UI.exam=Store.exams.find(e=>e.id===b.dataset.open);UI.view="exam";UI.tab="key";UI.form=0;UI.anForm=UI.exam.nforms>1?-1:0;render();});
   on("#create","click",async()=>{
-    const ex=newExam({name:$("#nName").value.trim()||"اختبار جديد", nq:+$("#nQ").value, nopt:+$("#nOpt").value, nforms:+$("#nF").value, idDigits:+$("#nD").value});
+    const ex=newExam({name:$("#nName").value.trim()||"اختبار جديد", subject:$("#nSubj").value.trim(), nq:+$("#nQ").value, nopt:+$("#nOpt").value, nforms:+$("#nF").value, idDigits:+$("#nD").value});
     Store.exams.push(ex); UI.exam=ex; UI.view="exam"; UI.tab="key"; UI.form=0; UI.anForm=ex.nforms>1?-1:0; render(); Store.saveExam(ex);
   });
   on("#saveRoster","click",()=>{
@@ -551,11 +612,12 @@ function bind(){
     ex.results.forEach(r=>{ if(r.form===f) r.score=scoreOf(ex,f,r.ans); });
     render(); queueSave(ex);
   });
-  if($("#sheetPrev")) renderSheet(UI.exam,4).then(cv=>{ const p=$("#sheetPrev"); if(!p) return; p.width=cv.width; p.height=cv.height; p.getContext("2d").drawImage(cv,0,0); });
+  if($("#sheetPrev")) sheetPage(UI.exam, UI.perPage||1, 110).then(P=>{ const p=$("#sheetPrev"); if(!p) return; p.width=P.cv.width; p.height=P.cv.height; p.getContext("2d").drawImage(P.cv,0,0); });
+  document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{UI.perPage=+b.dataset.pp;render();});
   on("#dlSheet","click",async()=>{
-    const cv=await renderSheet(UI.exam); const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
-    try{ await DL.save({filename:"ورقة إجابة - "+UI.exam.name+".png", data:blob}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التحميل."); }
+    try{ await downloadSheetPdf(UI.exam, UI.perPage||1); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); }
   });
+  on("#liveCam","click",()=>Live.start());
   on("#shot","change",e=>startScan([...e.target.files]));
   on("#many","change",e=>startScan([...e.target.files]));
   on("#manual","click",()=>{ const ex=UI.exam; UI.review={answers:Array(ex.nq).fill(-1), id:"", form:0, flags:0}; render(); });
@@ -577,7 +639,7 @@ function bind(){
     UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); render(); });
   on("#xlsx","click",exportXlsx);
   on("#saveSet","click",()=>{
-    const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
+    const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.subject=$("#sSubj").value.trim(); ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
     fixKeys(ex); ex.results.forEach(r=>{ r.ans=Array.from({length:ex.nq},(_,i)=>r.ans[i]??-1); if(r.form>=ex.nforms) r.form=0; r.score=scoreOf(ex,r.form,r.ans); });
     Store.saveExam(ex); toast("تم الحفظ"); render(); });
   on("#delExam","click",async()=>{ if(!await confirmBox("حذف الاختبار «"+UI.exam.name+"» وكل نتائجه؟ ما يمكن التراجع.","حذف نهائي")) return; await Store.deleteExam(UI.exam); UI.view="home"; render(); });
@@ -591,7 +653,7 @@ async function startScan(files){
 }
 async function nextInQueue(){
   UI.review=null;
-  if(!UI.queue.length){ render(); return; }
+  if(!UI.queue.length){ if(UI.fromLive){ UI.fromLive=false; render(); Live.start(); return; } render(); return; }
   const file=UI.queue.shift(); const ex=UI.exam;
   $("#panel").innerHTML=`<div class="card"><p>جاري قراءة الورقة…</p></div>`;
   await new Promise(r=>setTimeout(r,30));
@@ -626,8 +688,70 @@ async function exportXlsx(){
   const kk=[["السؤال",...FORM_LET.slice(0,ex.nforms).map(l=>"نموذج "+l)]]; for(let i=0;i<ex.nq;i++) kk.push([i+1,...ex.keys.slice(0,ex.nforms).map(k=>k[i]>=0?LET[k[i]]:"")]);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kk),"مفتاح الإجابة");
   const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});
-  try{ await DL.save({filename:"نتائج - "+ex.name+".xlsx", data:new Blob([buf])}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التصدير."); }
+  try{ await DL.save({filename:"نتائج - "+(ex.subject?ex.subject+" - ":"")+ex.name+".xlsx", data:new Blob([buf])}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التصدير."); }
 }
+
+/* ====================== live camera (ZipGrade-style) ====================== */
+const Live = {
+  stream:null, timer:null, busy:false, last:null, hold:null, lostFrames:0, saved:0,
+  async start(){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ toast("الكاميرا المباشرة غير مدعومة في هذا المتصفح، استخدم تحميل الصور."); return; }
+    const ex=UI.exam; this.saved=0; this.last=null; this.hold=null;
+    try{ const A=window.AudioContext||window.webkitAudioContext; if(A&&!this.ac) this.ac=new A(); if(this.ac&&this.ac.resume) this.ac.resume(); }catch(e){}
+    const L=$("#layer");
+    L.innerHTML=`<div class="cam" id="cam"><video id="camV" playsinline muted autoplay></video><div class="guide"><i></i><i></i><i></i><i></i></div>
+      <div class="bar"><div><b>${esc(ex.name)}</b><div class="small" id="camCount" style="opacity:.85">صُحّحت 0 ورقة</div></div><button class="btn" id="camClose">إنهاء</button></div>
+      <div class="msg"><div class="st" id="camSt">جاري تشغيل الكاميرا…</div><div id="camRes"></div></div></div>`;
+    $("#camClose").onclick=()=>this.stop(true);
+    try{
+      this.stream=await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}});
+    }catch(e){ this.stop(false); toast("ما قدرت أشغّل الكاميرا. اسمح للمتصفح باستخدامها، أو استخدم تحميل الصور."); return; }
+    const v=$("#camV"); v.srcObject=this.stream; try{ await v.play(); }catch(e){}
+    this.status("وجّه الكاميرا للورقة حتى تظهر المربعات السوداء الأربعة");
+    this.loop();
+  },
+  stop(rerender){ clearTimeout(this.timer); this.timer=null; if(this.stream){ this.stream.getTracks().forEach(t=>t.stop()); this.stream=null; } $("#layer").innerHTML=""; if(rerender) render(); },
+  status(t){ const e=$("#camSt"); if(e) e.textContent=t; },
+  showRes(html, cls){ const e=$("#camRes"); if(e) e.innerHTML=html?`<div class="res ${cls||""}">${html}</div>`:""; },
+  loop(){ this.timer=setTimeout(()=>this.tick(), 220); },
+  tick(){
+    const v=$("#camV"); if(!v||!this.stream) return;
+    if(!v.videoWidth){ this.loop(); return; }
+    const ex=UI.exam; let res=null;
+    try{ res=OMR.read(v, ex, 1280); }catch(e){ res=null; }
+    const cam=$("#cam"); if(cam) cam.classList.toggle("found", !!(res&&res.ok));
+    if(!res||!res.ok){
+      this.lostFrames++; this.last=null;
+      if(this.lostFrames>=3 && this.hold){ this.hold=null; this.status("جاهز للورقة اللي بعدها"); }
+      this.loop(); return;
+    }
+    this.lostFrames=0;
+    const sig=res.id+"|"+res.form+"|"+res.answers.join(",");
+    // same sheet still in front of the camera after it was saved: wait until it is removed
+    if(this.hold && this.hold===res.id){ this.loop(); return; }
+    if(this.last!==sig){ this.last=sig; this.status("ثبّت الجوال…"); this.loop(); return; }   // need two identical reads in a row
+    const flags=res.answers.filter(a=>a<0).length, idBad=res.id.includes("?"), formBad=ex.nforms>1&&res.form<0;
+    if(!idBad && !formBad && flags===0){
+      const form=res.form<0?0:res.form, sc=scoreOf(ex,form,res.answers);
+      ex.results=ex.results.filter(r=>r.sid!==res.id);
+      ex.results.push({sid:res.id, form, ans:res.answers.slice(), score:sc, at:Date.now()}); Store.saveExam(ex);
+      this.saved++; this.hold=res.id; this.last=null; this.beep(); if(navigator.vibrate) navigator.vibrate(80);
+      const nm=sName(res.id);
+      this.showRes(`<span class="sc">${sc} / ${ex.nq}</span>${esc(nm||res.id)}${ex.nforms>1?" • نموذج "+FORM_LET[form]:""}`, "ok");
+      const c=$("#camCount"); if(c) c.textContent="صُحّحت "+this.saved+" ورقة";
+      this.status("تم الحفظ ✓ — شيل الورقة وحط اللي بعدها");
+      this.loop(); return;
+    }
+    // unclear read: open it for review with the frame, then come back to the camera
+    const snap=document.createElement("canvas"); snap.width=v.videoWidth; snap.height=v.videoHeight; snap.getContext("2d").drawImage(v,0,0);
+    const r2=OMR.read(snap, ex, 1600); const R=r2.ok?r2:res;
+    this.stop(false);
+    UI.fromLive=true; UI.queue=[];
+    UI.review={answers:R.answers, id:R.id, form:R.form<0?0:R.form, formBad:ex.nforms>1&&R.form<0, flags:R.answers.filter(a=>a<0).length, canvas:R.G.canvas, H:R.H, L:R.L};
+    render(); toast("القراءة تحتاج مراجعة، صحّحها واحفظ وترجع الكاميرا");
+  },
+  beep(){ try{ if(!this.ac) return; const o=this.ac.createOscillator(), g=this.ac.createGain(); o.frequency.value=1250; g.gain.value=0.08; o.connect(g); g.connect(this.ac.destination); o.start(); o.stop(this.ac.currentTime+0.12); }catch(e){} }
+};
 
 /* ====================== boot ====================== */
 const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — الحسابات الكيميائية", nq:15, nopt:3, nforms:4, idDigits:10,
@@ -638,7 +762,7 @@ const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — ال
   Store.exams.forEach(fixKeys);
   render();
 })();
-window.__test={OMR,renderSheet,layout,SEED,fixKeys};
+window.__test={OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live};
 </script>
 </body>
 </html>
