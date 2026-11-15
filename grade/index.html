@@ -443,6 +443,10 @@ function homeHTML(){
     <button class="btn" id="goRoster">قائمة الطلاب</button></header>
     ${storageNote()}
     <div class="card"><h2>الاختبارات</h2><div class="examlist">${list||'<p class="muted">ما فيه اختبارات بعد. أنشئ أول اختبار من الأسفل.</p>'}</div></div>
+    <div class="card"><h2>اختبار من ملف Word</h2>
+      <p class="small muted">ارفع ملف Word فيه الأسئلة والخيارات، ويسوي لك التطبيق حتى 6 نماذج بترتيب مختلف للأسئلة والخيارات، ويحط مفتاح كل نموذج تلقائيًا، ويعطيك ملف Word للأسئلة جاهز للطباعة.</p>
+      <p class="small muted">طريقة الكتابة: رقّم الأسئلة (1- أو 1) أو ترقيم Word التلقائي)، واكتب الخيارات بحروف (أ- ب- ج- د- أو A) B) C) D)). حدّد الإجابة الصحيحة بنجمة * قبل الخيار، أو بخط عريض، أو بسطر «الإجابة: ب» تحت السؤال.</p>
+      <div class="row"><label class="btn pri" for="wordFile">رفع ملف Word</label><input type="file" id="wordFile" accept=".docx" style="display:none"></div></div>
     <div class="card"><h2>اختبار جديد</h2>
       <div class="row"><label class="f" style="flex-basis:60%">اسم الاختبار<input type="text" id="nName" placeholder="مثال: اختبار الباب السادس"></label>
         <label class="f">المادة<input type="text" id="nSubj" list="subjects" placeholder="اختر أو اكتب"></label>
@@ -512,6 +516,7 @@ function sheetHTML(){
     ${n===2?'<p class="small muted">نموذجين جنب بعض على ورقة A4 بالعرض، قصّها من الخط المنقط في النص. كل نصف يُصحَّح لحاله.</p>':""}
     <canvas id="sheetPrev" class="sheetprev" style="${n===2?"max-width:560px":""}" aria-label="معاينة ورقة الإجابة"></canvas>
     <div class="row"><button class="btn pri" id="dlSheet">تحميل ورقة الإجابة (PDF)</button><button class="btn" id="dlKey">تحميل نموذج الإجابة (PDF)</button>
+    ${UI.exam.bank?'<button class="btn" id="dlWord">تحميل أوراق الأسئلة (Word)</button>':""}
     </div></div>`;
 }
 function subjectsList(){
@@ -651,6 +656,8 @@ function settingsHTML(){
 function bind(){
   const on=(sel,ev,fn)=>{ const el=$(sel); if(el) el.addEventListener(ev,fn); };
   on("#goRoster","click",()=>{UI.view="roster";render();});
+  on("#wordFile","change",e=>{ const f=e.target.files[0]; if(f) WordX.fromFile(f); });
+  on("#dlWord","click",async()=>{ try{ await WordX.download(UI.exam); }catch(e){ toast("تعذّر تجهيز ملف Word."); } });
   on("#back","click",()=>{UI.view="home";UI.review=null;UI.queue=[];render();});
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{UI.exam=Store.exams.find(e=>e.id===b.dataset.open);UI.view="exam";UI.tab="key";UI.form=0;UI.anForm=UI.exam.nforms>1?-1:0;render();});
   on("#nSubj","input",e=>{ if(/الإنجليزي|الانجليزي|english/i.test(e.target.value)) $("#nLang").value="en"; });
@@ -672,6 +679,11 @@ function bind(){
   document.querySelectorAll("[data-an]").forEach(b=>b.onclick=()=>{UI.anForm=+b.dataset.an;render();});
   document.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
     const [i,o]=b.dataset.k.split(":").map(Number), ex=UI.exam, f=Math.min(UI.form,ex.nforms-1);
+    if(ex.bank && ex.forms && ex.forms[f]){ // question bank: one change updates every form
+      const qi=ex.forms[f].q[i], orig=ex.forms[f].o[i][o]; ex.bank[qi].ans = ex.bank[qi].ans===orig?-1:orig;
+      for(let g=0;g<ex.nforms;g++){ const pos=ex.forms[g].q.indexOf(qi); const a=ex.bank[qi].ans; ex.keys[g][pos]= a<0?-1:ex.forms[g].o[pos].indexOf(a); }
+      ex.results.forEach(r=>{ r.score=scoreOf(ex,r.form,r.ans); }); render(); queueSave(ex); return;
+    }
     ex.keys[f][i]= ex.keys[f][i]===o?-1:o;
     ex.results.forEach(r=>{ if(r.form===f) r.score=scoreOf(ex,f,r.ans); });
     render(); queueSave(ex);
@@ -710,7 +722,8 @@ function bind(){
   on("#xlsx","click",exportXlsx);
   on("#saveSet","click",()=>{
     const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.subject=$("#sSubj").value.trim(); ex.lang=$("#sLang").value==="en"?"en":"ar"; ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
-    fixKeys(ex); ex.results.forEach(r=>{ r.ans=Array.from({length:ex.nq},(_,i)=>r.ans[i]??-1); if(r.form>=ex.nforms) r.form=0; r.score=scoreOf(ex,r.form,r.ans); });
+    if(ex.bank){ ex.nq=ex.bank.length; ex.nopt=Math.max(ex.nopt, Math.max(...ex.bank.map(q=>q.opts.length))); }
+    fixKeys(ex); if(ex.bank) WordX.buildForms(ex); ex.results.forEach(r=>{ r.ans=Array.from({length:ex.nq},(_,i)=>r.ans[i]??-1); if(r.form>=ex.nforms) r.form=0; r.score=scoreOf(ex,r.form,r.ans); });
     Store.saveExam(ex); toast("تم الحفظ"); render(); });
   on("#delExam","click",async()=>{ if(!await confirmBox("حذف الاختبار «"+UI.exam.name+"» وكل نتائجه؟ ما يمكن التراجع.","حذف نهائي")) return; await Store.deleteExam(UI.exam); UI.view="home"; render(); });
 }
@@ -760,6 +773,230 @@ async function exportXlsx(){
   const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});
   try{ await DL.save({filename:"نتائج - "+(ex.subject?ex.subject+" - ":"")+ex.name+".xlsx", data:new Blob([buf])}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التصدير."); }
 }
+
+/* ====================== exam from a Word file: parse, shuffle into forms, export Word ====================== */
+const WordX = {
+  async lib(name){
+    const src={mammoth:"https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js", docx:"https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"}[name];
+    if(window[name]) return window[name];
+    await new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src=src; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); });
+    return window[name];
+  },
+  OPT_RE: /^\s*[\(\[]?\s*([أابجدa-dA-D])\s*[\)\]\-\.ـ:–]\s*([\s\S]*)$/,
+  Q_RE: /^\s*(?:س\s*|سؤال\s*|Q\s*)?([0-9٠-٩]{1,3})\s*[\)\-\.ـ:–]\s*([\s\S]*)$/i,
+  ANS_RE: /^\s*(?:الإجابة الصحيحة|الاجابة الصحيحة|الإجابة|الاجابة|الجواب|answer|ans|key)\s*[:：\-–]\s*\(?\s*([أابجدهـa-dA-D1-4١-٤])/i,
+  FIXED_RE: /(كل|جميع)\s*ما\s*(سبق|ذكر)|لا\s*شيء|ليس\s*مما\s*سبق|غير\s*ذلك|all of the above|none of the above|both [a-d] and/i,
+  letterIdx(ch){ const m={"أ":0,"ا":0,"ب":1,"ج":2,"د":3,"ه":4,"a":0,"b":1,"c":2,"d":3,"1":0,"2":1,"3":2,"4":3,"١":0,"٢":1,"٣":2,"٤":3}; const r=m[String(ch).toLowerCase()]; return r==null?-1:r; },
+  /* flatten the Word HTML into lines, remembering list level and bold/underline */
+  lines(root){
+    const out=[];
+    const mk=(el,level,list)=>{
+      const c=el.cloneNode(true); c.querySelectorAll("ol,ul").forEach(x=>x.remove());
+      const text=c.textContent.replace(/\s+/g," ").trim(), imgs=c.querySelectorAll("img").length;
+      const len=t=>t.replace(/\s/g,"").length, total=len(text);
+      const bold=total>0 && [...c.querySelectorAll("strong,b")].reduce((s,e)=>s+len(e.textContent),0)/total>0.8;
+      const und=total>0 && [...c.querySelectorAll("u")].reduce((s,e)=>s+len(e.textContent),0)/total>0.8;
+      if(total||imgs) out.push({el:c, text, imgs, level, list, bold, und});
+    };
+    const walk=(el,level)=>{
+      for(const ch of el.children){
+        const t=ch.tagName;
+        if(t==="OL"||t==="UL"){ for(const li of ch.children){ if(li.tagName!=="LI") continue; mk(li,level,true); li.querySelectorAll(":scope > ol, :scope > ul").forEach(sub=>walk({children:[sub]},level+1)); } }
+        else if(t==="TABLE"){ ch.querySelectorAll("td,th").forEach(td=>{ const ps=td.querySelectorAll("p"); if(ps.length) ps.forEach(p=>mk(p,0,false)); else mk(td,0,false); }); }
+        else mk(ch,0,false);
+      }
+    };
+    walk(root,0); return out;
+  },
+  /* split "أ- x  ب- y  ج- z" written on one line */
+  splitInline(text){
+    const re=/(?:^|\s)[\(\[]?([أابجدa-dA-D])\s*[\)\]\-\.ـ–]\s*/g; const hits=[]; let m;
+    while((m=re.exec(text))) hits.push({i:m.index, j:re.lastIndex, l:m[1]});
+    if(hits.length<2) return null;
+    const exp=[0,1,2,3]; if(!hits.every((h,k)=>this.letterIdx(h.l)===exp[k])) return null;
+    return hits.map((h,k)=>text.slice(h.j, k+1<hits.length?hits[k+1].i:text.length).trim());
+  },
+  parse(html){
+    const root=document.createElement("div"); root.innerHTML=html;
+    const Ls=this.lines(root), Q=[]; let cur=null;
+    const newQ=(stemHtml,stemText)=>{ cur={stem:stemHtml, text:stemText, opts:[], ans:-1, ansLetter:null}; Q.push(cur); };
+    const addOpt=(html,text,line)=>{ let t=text, star=false;
+      if(/^\s*[\*✓✔]|[\*✓✔]\s*$/.test(t)){ star=true; t=t.replace(/^\s*[\*✓✔]\s*|\s*[\*✓✔]\s*$/g,""); html=html.replace(/[\*✓✔]/g,""); }
+      cur.opts.push({html, text:t, star, bold:line?line.bold:false, und:line?line.und:false, fixed:this.FIXED_RE.test(t)}); };
+    for(const L of Ls){
+      let t=L.text; const lead=/^\s*[\*✓✔]\s*/.test(t); if(lead){ t=t.replace(/^\s*[\*✓✔]\s*/,""); L.text=t+" *"; }
+      const a=t.match(this.ANS_RE);
+      if(a && cur){ cur.ansLetter=a[1]; continue; }
+      const om=t.match(this.OPT_RE), qm=t.match(this.Q_RE);
+      if(cur && (om || (L.list && L.level>=1))){
+        const inl=this.splitInline(t);
+        if(inl && inl.length>=2){ inl.forEach(x=>addOpt(esc(x),x,null)); continue; }
+        const body=(om?om[2]:t)+(lead?" *":""); addOpt(om?this.stripLead(L.el.innerHTML):L.el.innerHTML, body, L); continue;
+      }
+      if(qm || (L.list && L.level===0)){
+        const stemText=qm?qm[2]:t; let stemHtml=qm?this.stripLead(L.el.innerHTML):L.el.innerHTML;
+        // options on the same line as the question
+        const inl=this.splitInline(stemText);
+        if(inl){ const cut=stemText.search(/(?:^|\s)[\(\[]?[أاa-dA-D]\s*[\)\]\-\.ـ–]/); newQ(esc(stemText.slice(0,cut).trim()), stemText.slice(0,cut).trim()); inl.forEach(x=>addOpt(esc(x),x,null)); }
+        else newQ(stemHtml, stemText);
+        continue;
+      }
+      if(!cur){ if(/[؟?]\s*$/.test(t)) newQ(L.el.innerHTML,t); continue; }      // title lines before the first question are skipped
+      if(cur.opts.length===0){ cur.stem+="<br>"+L.el.innerHTML; cur.text+=" "+t; continue; }  // stem continues (second line, picture)
+      if(L.imgs && !t){ cur.opts[cur.opts.length-1].html+="<br>"+L.el.innerHTML; continue; }
+      newQ(L.el.innerHTML,t);                                                         // an unnumbered new question
+    }
+    // decide the right answer of every question
+    Q.forEach((q,n)=>{
+      q.warn=[];
+      const st=q.opts.map((o,i)=>o.star?i:-1).filter(i=>i>=0);
+      const bo=q.opts.map((o,i)=>o.bold?i:-1).filter(i=>i>=0);
+      const un=q.opts.map((o,i)=>o.und?i:-1).filter(i=>i>=0);
+      if(q.ansLetter!=null) q.ans=this.letterIdx(q.ansLetter);
+      else if(st.length===1) q.ans=st[0];
+      else if(bo.length===1 && q.opts.length>1) q.ans=bo[0];
+      else if(un.length===1 && q.opts.length>1) q.ans=un[0];
+      if(q.ans>=q.opts.length) q.ans=-1;
+      if(q.opts.length<2) q.warn.push("أقل من خيارين");
+      if(q.opts.length>4) q.warn.push("أكثر من 4 خيارات (ينحذف الزايد)");
+      if(q.ans<0) q.warn.push("ما تحددت الإجابة الصحيحة");
+      q.opts=q.opts.slice(0,4);
+    });
+    return Q.filter(q=>q.opts.length>=2);
+  },
+  stripLead(html){ // remove the leading "1-" or "أ)" from the html, keeping formatting
+    const d=document.createElement("div"); d.innerHTML=html;
+    const w=document.createTreeWalker(d,NodeFilter.SHOW_TEXT); let n;
+    while((n=w.nextNode())){ if(!n.nodeValue.trim()) continue;
+      n.nodeValue=n.nodeValue.replace(/^\s*[\*✓✔]\s*/,"").replace(/^\s*(?:س\s*|سؤال\s*|Q\s*)?[0-9٠-٩]{1,3}\s*[\)\-\.ـ:–]\s*/i,"").replace(/^\s*[\(\[]?\s*[أابجدa-dA-D]\s*[\)\]\-\.ـ:–]\s*/,""); break; }
+    return d.innerHTML;
+  },
+  rng(seed){ let a=seed>>>0; return ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; },
+  shuffle(arr,r){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; },
+  /* order of questions and options in every form (form 1 = the original file) */
+  buildForms(ex){
+    const B=ex.bank, forms=[];
+    for(let f=0;f<ex.nforms;f++){
+      const r=this.rng(ex.seed+f*7919);
+      const qo = (f===0||!ex.shufQ) ? B.map((_,i)=>i) : this.shuffle(B.map((_,i)=>i),r);
+      const oo = qo.map(qi=>{ const n=B[qi].opts.length, idx=[...Array(n).keys()];
+        if(f===0||!ex.shufO) return idx;
+        const free=idx.filter(i=>!B[qi].opts[i].fixed), sh=this.shuffle(free,r); let k=0;
+        return idx.map(i=>B[qi].opts[i].fixed?i:sh[k++]); });
+      forms.push({q:qo,o:oo});
+    }
+    ex.forms=forms;
+    for(let f=0;f<ex.nforms;f++) ex.keys[f]=forms[f].q.map((qi,pos)=>{ const a=B[qi].ans; return a<0?-1:forms[f].o[pos].indexOf(a); });
+  },
+  /* ---------- Word export ---------- */
+  async imgData(src){ if(!/^data:/.test(src)) return null;
+    const bin=atob(src.split(",")[1]); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+    const im=await new Promise(res=>{ const x=new Image(); x.onload=()=>res(x); x.onerror=()=>res(null); x.src=src; });
+    if(!im) return null; const w=Math.min(420, im.width), h=Math.round(im.height*w/im.width); return {data:u, w, h}; },
+  async runs(html, rtl, base){
+    const D=window.docx, out=[], d=document.createElement("div"); d.innerHTML=html;
+    const walk=async(node,fmt)=>{
+      for(const n of node.childNodes){
+        if(n.nodeType===3){ const t=n.nodeValue.replace(/\s+/g," "); if(!t) continue;
+          // in Arabic text keep Latin words, numbers and formulas as left-to-right pieces so "16 g/mol" or "6.02×10²³" stay in order
+          const parts = rtl ? t.split(/([A-Za-z0-9][A-Za-z0-9\s\.,×·\^\-+\/%⁰-⁹₀-₉²³¹()\[\]=]*[A-Za-z0-9⁰-⁹₀-₉²³¹)\]]|[A-Za-z0-9])/) : [t];
+          parts.forEach((x,k)=>{ if(!x) return; const ltr = rtl && k%2===1;
+            out.push(new D.TextRun({text: ltr ? "\u200E"+x+"\u200E" : x, rightToLeft:rtl && !ltr, bold:fmt.b||base.bold, italics:fmt.i, underline:fmt.u?{}:undefined, size:base.size, font:"Arial"})); }); }
+        else if(n.nodeName==="IMG"){ const im=await this.imgData(n.getAttribute("src")||""); if(im) out.push(new D.ImageRun({data:im.data, transformation:{width:im.w, height:im.h}})); }
+        else if(n.nodeName==="BR"){ out.push(new D.TextRun({text:"", break:1})); }
+        else if(n.nodeName==="SUP"||n.nodeName==="SUB"){ const t=n.textContent; if(t) out.push(new D.TextRun({text:t, rightToLeft:rtl, size:base.size, font:"Arial", superScript:n.nodeName==="SUP", subScript:n.nodeName==="SUB"})); }
+        else await walk(n,{b:fmt.b||n.nodeName==="STRONG"||n.nodeName==="B", i:fmt.i||n.nodeName==="EM"||n.nodeName==="I", u:fmt.u||n.nodeName==="U"});
+      }
+    };
+    await walk(d,{}); return out;
+  },
+  async examDocx(ex){
+    const D=await this.lib("docx"), rtl=!isEn(ex), AL=rtl?D.AlignmentType.RIGHT:D.AlignmentType.LEFT, C=D.AlignmentType.CENTER;
+    useLang(ex);
+    const P=(children,o={})=>new D.Paragraph({bidirectional:rtl, alignment:o.al||AL, spacing:{before:o.before||0, after:o.after||80}, indent:o.indent, keepNext:o.keepNext, children});
+    const T=(text,o={})=>new D.TextRun({text, rightToLeft:rtl, bold:o.b, size:o.s||26, font:"Arial", color:o.c});
+    const sections=[];
+    for(let f=0;f<ex.nforms;f++){
+      const fm=ex.forms[f], kids=[];
+      kids.push(P([T(rtl?"الهيئة الملكية بالجبيل — مدارس الهيئة الملكية — ثانوية الدفي":"Royal Commission in Jubail — Al-Dafi Secondary School",{s:22,c:"07277A",b:true})],{al:C}));
+      kids.push(P([T(ex.name,{s:32,b:true})],{al:C,before:80}));
+      const meta = rtl ? [(ex.subject?"المادة: "+ex.subject+"     ":"")+(ex.nforms>1?"النموذج: "+FORM_LET[f]+"     ":"")+"عدد الأسئلة: "+ex.nq+"     الدرجة: "+totalOf(ex)]
+                       : ["English     "+(ex.nforms>1?"Form: "+FORM_LET[f]+"     ":"")+"Questions: "+ex.nq+"     Total: "+totalOf(ex)];
+      kids.push(P([T(meta[0],{s:24,b:true})],{al:C,after:160}));
+      kids.push(P([T(rtl?"اسم الطالب: ..............................................     الفصل: ............":"Name: ..............................................     Class: ............",{s:24})],{after:120}));
+      kids.push(P([T(rtl?"ظلّل الإجابة الصحيحة في ورقة الإجابة"+(ex.nforms>1?"، وظلّل رمز النموذج ("+FORM_LET[f]+")":"")+".":"Shade the correct answer on the answer sheet"+(ex.nforms>1?" and bubble Form ("+FORM_LET[f]+")":"")+".",{s:22,c:"555555"})],{after:240}));
+      for(let pos=0;pos<fm.q.length;pos++){
+        const q=ex.bank[fm.q[pos]];
+        const stem=await this.runs(q.stem, rtl, {size:26, bold:true});
+        kids.push(P([T((pos+1)+") ",{b:true}), ...stem],{before:140, keepNext:true}));
+        for(let k=0;k<fm.o[pos].length;k++){
+          const o=q.opts[fm.o[pos][k]];
+          kids.push(P([T(LET[k]+") ",{b:true}), ...(await this.runs(o.html, rtl, {size:26}))],{indent:rtl?{right:500}:{left:500}, keepNext:k<fm.o[pos].length-1, after:40}));
+        }
+      }
+      sections.push({properties:{page:{margin:{top:900,bottom:900,left:900,right:900}}}, children:kids});
+    }
+    // answer key as the last pages (teacher copy)
+    const kk=[P([T(rtl?"مفتاح الإجابة — للمعلم فقط":"Answer Key — Teacher Only",{s:30,b:true})],{al:C,after:200})];
+    const head=[rtl?"السؤال":"Q", ...[...Array(ex.nforms).keys()].map(f=>(rtl?"نموذج ":"Form ")+FORM_LET[f])];
+    const cell=t=>new D.TableCell({children:[P([T(String(t),{s:22})],{al:C,after:0})]});
+    const rows=[new D.TableRow({tableHeader:true, children:head.map(cell)})];
+    for(let i=0;i<ex.nq;i++) rows.push(new D.TableRow({children:[cell(i+1), ...[...Array(ex.nforms).keys()].map(f=>cell(ex.keys[f][i]>=0?LET[ex.keys[f][i]]:"—"))]}));
+    kk.push(new D.Table({rows, visuallyRightToLeft:rtl, width:{size:100, type:D.WidthType.PERCENTAGE}}));
+    const keyDoc=new D.Document({sections:[{properties:{page:{margin:{top:900,bottom:900,left:900,right:900}}}, children:kk}]});
+    const doc=new D.Document({creator:"واعد — التصحيح الآلي", sections});
+    return {exam:await D.Packer.toBlob(doc), key:await D.Packer.toBlob(keyDoc)};
+  },
+  async download(ex){
+    toast("جاري تجهيز ملف Word…");
+    const {exam,key}=await this.examDocx(ex);
+    await DL.save({filename:"أسئلة "+ex.name+(ex.nforms>1?" ("+ex.nforms+" نماذج)":"")+".docx", data:exam});
+    await new Promise(r=>setTimeout(r,600));
+    await DL.save({filename:"مفتاح "+ex.name+".docx", data:key});
+  },
+  /* ---------- the upload flow ---------- */
+  async fromFile(file){
+    if(!/\.docx$/i.test(file.name)){ toast("ارفع ملف Word بصيغة ‎.docx (احفظه من Word باسم ‎.docx إذا كان ‎.doc)"); return; }
+    toast("جاري قراءة ملف Word…");
+    let Q=[];
+    try{ const m=await this.lib("mammoth");
+      const r=await m.convertToHtml({arrayBuffer:await file.arrayBuffer()},{styleMap:["u => u"], convertImage:m.images.imgElement(img=>img.read("base64").then(b=>({src:"data:"+img.contentType+";base64,"+b})))});
+      Q=this.parse(r.value);
+    }catch(e){ toast("تعذّرت قراءة الملف."); return; }
+    if(!Q.length){ toast("ما لقيت أسئلة اختيار من متعدد في الملف."); return; }
+    if(Q.length>40){ toast("الملف فيه "+Q.length+" سؤال، والحد 40. أخذت أول 40."); Q=Q.slice(0,40); }
+    const latin=Q.map(q=>q.text).join(" "), en=(latin.match(/[A-Za-z]/g)||[]).length > (latin.match(/[؀-ۿ]/g)||[]).length;
+    UI.wordDraft={Q, name:file.name.replace(/\.docx$/i,""), en};
+    this.preview();
+  },
+  preview(){
+    const W=UI.wordDraft, Q=W.Q, bad=Q.map((q,i)=>q.warn.length?`<li>سؤال ${i+1}: ${q.warn.join("، ")}</li>`:"").join("");
+    const nopt=Math.max(3,Math.min(4,Math.max(...Q.map(q=>q.opts.length))));
+    const L=$("#layer");
+    L.innerHTML=`<div class="modal"><div class="card" style="max-width:560px;max-height:90vh;overflow:auto">
+      <h2>اختبار من ملف Word</h2>
+      <p class="small">لقيت <b>${Q.length}</b> سؤال، ${Q.filter(q=>q.ans>=0).length} منها محددة إجابتها، وعدد الخيارات ${nopt}.</p>
+      ${bad?`<div class="note warn small"><b>تحتاج انتباه:</b><ul style="margin:4px 0 0;padding-inline-start:18px">${bad}</ul>تقدر تكمل وتحدد الإجابات الناقصة بعدين من تبويب المفتاح.</div>`:""}
+      <div class="row" style="margin-top:10px"><label class="f" style="flex-basis:100%">اسم الاختبار<input type="text" id="wName" value="${esc(W.name)}"></label></div>
+      <div class="row" style="margin-top:8px"><label class="f">المادة<input type="text" id="wSubj" list="subjects" value="${W.en?"اللغة الإنجليزية":""}"></label>
+        <label class="f">عدد النماذج<select id="wF">${[1,2,3,4,5,6].map(v=>`<option ${v===4?"selected":""}>${v}</option>`).join("")}</select></label></div>${subjectsList()}
+      <div class="row" style="margin-top:10px;gap:16px"><label class="small"><input type="checkbox" id="wSQ" checked> تغيير ترتيب الأسئلة</label>
+        <label class="small"><input type="checkbox" id="wSO" checked> تغيير ترتيب الخيارات</label></div>
+      <p class="small muted">النموذج ${W.en?"A":"أ"} بنفس ترتيب ملفك، والباقي بترتيب مختلف. خيارات مثل «جميع ما سبق» تبقى في مكانها.</p>
+      <details class="small"><summary>معاينة أول 3 أسئلة</summary>${Q.slice(0,3).map((q,i)=>`<div style="margin:8px 0"><b>${i+1}) ${esc(q.text)}</b><br>${q.opts.map((o,k)=>`<span style="${k===q.ans?"color:var(--good);font-weight:700":""}">${(W.en?LET_EN:LET_AR)[k]}) ${esc(o.text)}</span>`).join("<br>")}</div>`).join("")}</details>
+      <div class="row" style="margin-top:12px"><button class="btn pri" id="wGo">إنشاء الاختبار وتحميل النماذج</button><button class="btn" id="wNo">إلغاء</button></div></div></div>`;
+    $("#wNo").onclick=()=>{L.innerHTML=""; UI.wordDraft=null;};
+    $("#wGo").onclick=async()=>{
+      const ex=newExam({name:$("#wName").value.trim()||W.name, subject:$("#wSubj").value.trim(), lang:W.en?"en":"ar", nq:Q.length, nopt, nforms:+$("#wF").value, idDigits:10});
+      ex.bank=Q.map(q=>({stem:q.stem, text:q.text, ans:q.ans, opts:q.opts.map(o=>({html:o.html, text:o.text, fixed:o.fixed}))}));
+      ex.seed=Math.floor(Math.random()*1e9); ex.shufQ=$("#wSQ").checked; ex.shufO=$("#wSO").checked;
+      this.buildForms(ex); fixKeys(ex);
+      Store.exams.push(ex); Store.saveExam(ex); L.innerHTML=""; UI.wordDraft=null;
+      UI.exam=ex; UI.view="exam"; UI.tab="key"; UI.form=0; UI.anForm=ex.nforms>1?-1:0; render();
+      try{ await this.download(ex); }catch(e){ toast("انحفظ الاختبار، بس تعذّر تجهيز ملف Word. جرّب زر التحميل من تبويب ورقة الإجابة."); }
+    };
+  }
+};
 
 /* ====================== import the answer key from a file ====================== */
 function ansIndex(v){
@@ -904,7 +1141,7 @@ const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — ال
   Store.exams.forEach(fixKeys);
   render();
 })();
-window.__test={keyFromRows,importKey,OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live,renderKey,scoreOf,totalOf};
+window.__test={WordX,keyFromRows,importKey,OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live,renderKey,scoreOf,totalOf};
 </script>
 </body>
 </html>
