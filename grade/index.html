@@ -136,8 +136,12 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 <script>
 "use strict";
 /* ====================== constants & helpers ====================== */
-const LET = ["أ","ب","ج","د"];
-const FORM_LET = ["أ","ب","ج","د","هـ","و"];
+const LET_AR = ["أ","ب","ج","د"], LET_EN = ["A","B","C","D"];
+let LET = LET_AR;
+const FORM_AR = ["أ","ب","ج","د","هـ","و"], FORM_EN = ["A","B","C","D","E","F"];
+let FORM_LET = FORM_AR;
+const isEn = ex => !!ex && ex.lang==="en";
+function useLang(ex){ LET = isEn(ex)?LET_EN:LET_AR; FORM_LET = isEn(ex)?FORM_EN:FORM_AR; }
 const MAXF = 6;
 const $ = (s, el=document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -173,7 +177,7 @@ function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTim
 
 /* ====================== exam model ====================== */
 function newExam(o){
-  const ex = {id:uid(), name:o.name||"اختبار جديد", subject:o.subject||"", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
+  const ex = {id:uid(), name:o.name||"اختبار جديد", subject:o.subject||"", lang:o.lang==="en"?"en":"ar", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
   fixKeys(ex); return ex;
 }
 function fixKeys(ex){
@@ -201,17 +205,17 @@ function keyComplete(ex, f){ return ex.keys[f].every(v=>v>=0); }
 const SHEET = {W:210, H:297, fid:[[14,14],[196,14],[196,283],[14,283]], fidSize:9, orient:[28,14], orientSize:4.5,
   white:[[14,32],[196,32],[196,265],[14,265]]};
 function layout(ex){
-  const L = {id:[], form:[], q:[]};
-  const n=ex.idDigits, x0 = 55-(n-1)*3.6;
+  const L = {id:[], form:[], q:[]}, en=isEn(ex);
+  const n=ex.idDigits, x0 = en ? 210-(55+(n-1)*3.6) : 55-(n-1)*3.6;
   for(let c=0;c<n;c++){ const col=[]; for(let d=0;d<10;d++) col.push({x:x0+c*7.2, y:58+d*5.4, r:2.2}); L.id.push(col); }
-  for(let f=0;f<ex.nforms;f++) L.form.push(ex.nforms<=4 ? {x:176-f*12, y:62, r:3.3} : {x:178-(f%3)*16, y:f<3?56:67, r:3.3});
+  for(let f=0;f<ex.nforms;f++){ const b = ex.nforms<=4 ? {x:176-f*12, y:62, r:3.3} : {x:178-(f%3)*16, y:f<3?56:67, r:3.3}; if(en) b.x=210-b.x; L.form.push(b); }
   const cols = ex.nq>20?2:1, per = Math.ceil(ex.nq/cols);
   const sp = Math.min(7.4, per>1 ? 140/(per-1) : 7.4);
   for(let i=0;i<ex.nq;i++){
     const c=Math.floor(i/per), r=i%per;
-    const numX = cols===1 ? 150 : (c===0?186:94);
+    const numX = en ? (cols===1 ? 60 : (c===0?24:116)) : (cols===1 ? 150 : (c===0?186:94));
     const y=124+r*sp; const opts=[];
-    for(let o=0;o<ex.nopt;o++) opts.push({x:numX-12-o*11, y, r:3.2});
+    for(let o=0;o<ex.nopt;o++) opts.push({x: en ? numX+12+o*11 : numX-12-o*11, y, r:3.2});
     L.q.push({numX, y, opts});
   }
   return L;
@@ -219,6 +223,7 @@ function layout(ex){
 
 /* ====================== render the printable sheet ====================== */
 async function renderSheet(ex, pxPerMm=11.811){
+  useLang(ex); const en=isEn(ex), mx=x=>en?210-x:x;
   try{ await document.fonts.load('700 20px "IBM Plex Sans Arabic"'); await document.fonts.load('400 20px "IBM Plex Sans Arabic"'); }catch(e){}
   const k=pxPerMm, cv=document.createElement("canvas"); cv.width=Math.round(SHEET.W*k); cv.height=Math.round(SHEET.H*k);
   const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height);
@@ -228,42 +233,52 @@ async function renderSheet(ex, pxPerMm=11.811){
   { const [x,y]=SHEET.orient, s=SHEET.orientSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }
   g.direction="rtl"; g.textAlign="center"; g.textBaseline="middle";
   const logo=await loadLogo(); if(logo){ const lh=12, lw=lh*logo.width/logo.height; g.drawImage(logo,(186-lw)*k,8.5*k,lw*k,lh*k); }
-  g.textAlign="right"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("الهيئة الملكية بالجبيل",(logo?186-12*400/304-2:184)*k,11*k);
-  g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("مدارس الهيئة الملكية — ثانوية الدفي",(logo?186-12*400/304-2:184)*k,15.5*k);
+  const hx=(logo?186-12*400/304-2:184)*k;
+  if(en){ g.direction="ltr"; g.textAlign="right"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("Royal Commission in Jubail",hx,11*k);
+    g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("Royal Commission Schools — Al-Dafi Secondary",hx,15.5*k);
+    g.textAlign="left"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("Waed Portal",38*k,11*k);
+    g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("Auto-Grading Service",38*k,15.5*k); }
+  else{ g.textAlign="right"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("الهيئة الملكية بالجبيل",hx,11*k);
+  g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("مدارس الهيئة الملكية — ثانوية الدفي",hx,15.5*k);
   g.textAlign="left"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("بوابة واعد",38*k,11*k);
-  g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("خدمة التصحيح الآلي",38*k,15.5*k);
+  g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("خدمة التصحيح الآلي",38*k,15.5*k); }
   g.textAlign="center"; g.fillStyle="#000"; g.font=F(700,4.6); g.fillText(ex.name, 105*k, 22.5*k);
-  g.font=F(500,3.1); g.fillStyle="#444"; g.fillText((ex.subject?"المادة: "+ex.subject+"   •   ":"")+"ورقة الإجابة   •   "+ex.nq+" سؤال   •   الدرجة "+totalOf(ex), 105*k, 27.3*k);
-  g.textAlign="right"; g.font=F(500,3.6); g.fillStyle="#000";
-  g.fillText("اسم الطالب: ..................................................", 192*k, 33.5*k);
-  g.textAlign="left"; g.fillText("الفصل: ..............", 20*k, 33.5*k);
+  g.font=F(500,3.1); g.fillStyle="#444";
+  g.fillText(en ? "English   •   Answer Sheet   •   "+ex.nq+" Questions   •   Total "+totalOf(ex)
+               : (ex.subject?"المادة: "+ex.subject+"   •   ":"")+"ورقة الإجابة   •   "+ex.nq+" سؤال   •   الدرجة "+totalOf(ex), 105*k, 27.3*k);
+  g.font=F(500,3.6); g.fillStyle="#000";
+  if(en){ g.textAlign="left"; g.fillText("Student Name: ..................................................", 18*k, 33.5*k);
+    g.textAlign="right"; g.fillText("Class: ..............", 190*k, 33.5*k); }
+  else{ g.textAlign="right"; g.fillText("اسم الطالب: ..................................................", 192*k, 33.5*k);
+  g.textAlign="left"; g.fillText("الفصل: ..............", 20*k, 33.5*k); }
   const L=layout(ex);
   // ID block
   const idL=L.id[0][0].x-5, idR=L.id[L.id.length-1][0].x+5;
   g.strokeStyle="#9aa"; g.lineWidth=0.3*k; roundRect(g,(idL)*k,38*k,(idR-idL)*k,76*k,2*k); g.stroke();
-  g.textAlign="center"; g.font=F(700,3.4); g.fillStyle="#000"; g.fillText("رقم الطالب (ظلّل الرقم)", ((idL+idR)/2)*k, 42*k);
+  g.textAlign="center"; g.font=F(700,3.4); g.fillStyle="#000"; g.fillText(en?"Student ID (bubble each digit)":"رقم الطالب (ظلّل الرقم)", ((idL+idR)/2)*k, 42*k);
   g.lineWidth=0.25*k; g.strokeStyle="#777";
   L.id.forEach(col=>{ g.strokeRect((col[0].x-2.8)*k,46*k,5.6*k,6*k); col.forEach((b,d)=>bubble(g,k,b,String(d),2.3)); });
   // form block
   if(ex.nforms>1){
-    g.strokeStyle="#9aa"; g.lineWidth=0.3*k; roundRect(g,128*k,38*k,64*k,34*k,2*k); g.stroke();
-    g.fillStyle="#000"; g.font=F(700,3.6); g.textAlign="center"; g.fillText("رمز النموذج (ظلّل حرفًا واحدًا)",160*k,45*k);
+    g.strokeStyle="#9aa"; g.lineWidth=0.3*k; roundRect(g,(en?18:128)*k,38*k,64*k,34*k,2*k); g.stroke();
+    g.fillStyle="#000"; g.font=F(700,3.6); g.textAlign="center"; g.fillText(en?"Form (bubble one letter)":"رمز النموذج (ظلّل حرفًا واحدًا)",mx(160)*k,45*k);
     g.lineWidth=0.25*k; g.strokeStyle="#777";
     L.form.forEach((b,f)=>bubble(g,k,b,FORM_LET[f],3));
   }
   // instructions
-  g.textAlign="right"; g.fillStyle="#333"; g.font=F(400,3.1);
-  const ins=["• ظلّل الدائرة كاملة بقلم رصاص غامق.","• لا تكتب ولا تؤشر داخل المربعات السوداء.","• اختر إجابة واحدة فقط لكل سؤال."];
-  ins.forEach((t,i)=>g.fillText(t,190*k,(ex.nforms>1?82:48)*k+i*6*k));
+  g.textAlign=en?"left":"right"; g.fillStyle="#333"; g.font=F(400,3.1);
+  const ins=en?["• Fill the bubble completely with a dark pencil.","• Do not write or mark inside the black squares.","• Choose only ONE answer for each question."]
+              :["• ظلّل الدائرة كاملة بقلم رصاص غامق.","• لا تكتب ولا تؤشر داخل المربعات السوداء.","• اختر إجابة واحدة فقط لكل سؤال."];
+  ins.forEach((t,i)=>g.fillText(t,mx(190)*k,(ex.nforms>1?82:48)*k+i*6*k));
   // questions
   g.strokeStyle="#ccd"; g.lineWidth=0.25*k; g.beginPath(); g.moveTo(20*k,116*k); g.lineTo(190*k,116*k); g.stroke();
   L.q.forEach((q,i)=>{
-    if(i%2===0){ g.fillStyle="#f2f4f3"; const x1=q.opts[q.opts.length-1].x-5, x2=q.numX+5; g.fillRect(x1*k,(q.y-3.6)*k,(x2-x1)*k,7.2*k); }
+    if(i%2===0){ g.fillStyle="#f2f4f3"; const xs=[q.opts[q.opts.length-1].x, q.numX], x1=Math.min(...xs)-5, x2=Math.max(...xs)+5; g.fillRect(x1*k,(q.y-3.6)*k,(x2-x1)*k,7.2*k); }
     g.fillStyle="#000"; g.font=F(700,3.6); g.textAlign="center"; g.fillText(String(i+1), q.numX*k, q.y*k);
     g.strokeStyle="#666"; g.lineWidth=0.25*k;
     q.opts.forEach((b,o)=>bubble(g,k,b,LET[o],3.4));
   });
-  g.fillStyle="#888"; g.font=F(400,2.6); g.textAlign="center"; g.fillText("وجّه الكاميرا للورقة كاملة ومستوية بحيث تظهر المربعات السوداء الأربعة", 105*k, 290*k);
+  g.fillStyle="#888"; g.font=F(400,2.6); g.textAlign="center"; g.fillText(en?"Keep the whole sheet flat so all four black squares are visible":"وجّه الكاميرا للورقة كاملة ومستوية بحيث تظهر المربعات السوداء الأربعة", 105*k, 290*k);
   return cv;
 }
 let _logo=null;
@@ -408,7 +423,7 @@ const UI = {view:"home", exam:null, tab:"key", form:0, queue:[], review:null, an
 const DL={ save({filename,data}){ const url=URL.createObjectURL(data instanceof Blob?data:new Blob([data])); const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); return Promise.resolve({status:"saved"}); } };
 
 function render(){
-  const A=$("#app");
+  const A=$("#app"); useLang(UI.view==="exam"?UI.exam:null);
   if(UI.view==="home") A.innerHTML=homeHTML();
   else if(UI.view==="roster") A.innerHTML=rosterHTML();
   else A.innerHTML=examHTML();
@@ -422,14 +437,15 @@ function homeHTML(){
   const list=Store.exams.slice().sort((a,b)=>b.created-a.created).map(ex=>{
     const missing=[...Array(ex.nforms).keys()].some(f=>!keyComplete(ex,f));
     return `<button class="exam-item" data-open="${ex.id}"><span><b>${esc(ex.name)}</b>
-      <span class="chips">${ex.subject?`<span class="chip">${esc(ex.subject)}</span>`:""}<span class="chip">${ex.nq} سؤال</span><span class="chip">${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</span><span class="chip">${ex.results.length} ورقة مصححة</span>${missing?'<span class="chip warn">المفتاح ناقص</span>':""}</span></span><span class="muted">‹</span></button>`;}).join("");
+      <span class="chips">${ex.subject?`<span class="chip">${esc(ex.subject)}</span>`:""}${isEn(ex)?'<span class="chip">EN</span>':""}<span class="chip">${ex.nq} سؤال</span><span class="chip">${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</span><span class="chip">${ex.results.length} ورقة مصححة</span>${missing?'<span class="chip warn">المفتاح ناقص</span>':""}</span></span><span class="muted">‹</span></button>`;}).join("");
   return `<header class="top"><div><h1>التصحيح الآلي</h1><div class="sub">صحّح أوراق الاختيار من متعدد بتصويرها بالجوال</div></div>
     <button class="btn" id="goRoster">قائمة الطلاب</button></header>
     ${storageNote()}
     <div class="card"><h2>الاختبارات</h2><div class="examlist">${list||'<p class="muted">ما فيه اختبارات بعد. أنشئ أول اختبار من الأسفل.</p>'}</div></div>
     <div class="card"><h2>اختبار جديد</h2>
       <div class="row"><label class="f" style="flex-basis:60%">اسم الاختبار<input type="text" id="nName" placeholder="مثال: اختبار الباب السادس"></label>
-        <label class="f">المادة<input type="text" id="nSubj" list="subjects" placeholder="اختر أو اكتب"></label></div>${subjectsList()}
+        <label class="f">المادة<input type="text" id="nSubj" list="subjects" placeholder="اختر أو اكتب"></label>
+        <label class="f">لغة الورقة<select id="nLang"><option value="ar">عربي (أ ب ج د)</option><option value="en">إنجليزي (A B C D)</option></select></label></div>${subjectsList()}
       <div class="row" style="margin-top:8px">
         <label class="f">عدد الأسئلة<input type="number" id="nQ" min="1" max="40" value="20"></label>
         <label class="f">عدد الخيارات<select id="nOpt"><option value="3">3 (أ ب ج)</option><option value="4">4 (أ ب ج د)</option></select></label>
@@ -505,12 +521,13 @@ async function renderKey(ex, f, k){
   // cover the name line with a key banner
   g.fillStyle="#fff"; g.fillRect(18*k,29.5*k,176*k,7*k);
   g.fillStyle="#07277A"; g.font=F(700,4.2); g.textAlign="center"; g.textBaseline="middle"; g.direction="rtl";
-  g.fillText("نموذج الإجابة"+(ex.nforms>1?" — نموذج "+FORM_LET[f]:"")+"   •   المجموع "+totalOf(ex)+" درجة", 105*k, 33.2*k);
+  if(isEn(ex)){ g.direction="ltr"; g.fillText("Answer Key"+(ex.nforms>1?" — Form "+FORM_LET[f]:"")+"   •   Total "+totalOf(ex)+" marks", 105*k, 33.2*k); }
+  else g.fillText("نموذج الإجابة"+(ex.nforms>1?" — نموذج "+FORM_LET[f]:"")+"   •   المجموع "+totalOf(ex)+" درجة", 105*k, 33.2*k);
   g.fillStyle="#111";
   L.q.forEach((q,i)=>{ const a=key[i]; if(a>=0){ const b=q.opts[a]; g.beginPath(); g.arc(b.x*k,b.y*k,b.r*0.9*k,0,7); g.fill();
       g.fillStyle="#fff"; g.font=F(700,2.6); g.fillText(LET[a],b.x*k,(b.y+0.15)*k); g.fillStyle="#111"; }
     const last=q.opts[q.opts.length-1]; g.fillStyle="#07277A"; g.font=F(700,2.7); g.textAlign="center";
-    g.fillText("("+qpt(ex,i)+")", (last.x-7.5)*k, q.y*k); g.fillStyle="#111"; });
+    g.fillText("("+qpt(ex,i)+")", (isEn(ex)?last.x+7.5:last.x-7.5)*k, q.y*k); g.fillStyle="#111"; });
   if(ex.nforms>1){ const b=L.form[f]; g.beginPath(); g.arc(b.x*k,b.y*k,b.r*0.9*k,0,7); g.fill(); }
   return cv;
 }
@@ -616,7 +633,8 @@ function settingsHTML(){
   const ex=UI.exam;
   return `<div class="card"><h2>إعدادات الاختبار</h2>
     <div class="row"><label class="f" style="flex-basis:60%">اسم الاختبار<input type="text" id="sName" value="${esc(ex.name)}"></label>
-    <label class="f">المادة<input type="text" id="sSubj" list="subjects" value="${esc(ex.subject||"")}"></label></div>${subjectsList()}
+    <label class="f">المادة<input type="text" id="sSubj" list="subjects" value="${esc(ex.subject||"")}"></label>
+    <label class="f">لغة الورقة<select id="sLang"><option value="ar" ${!isEn(ex)?"selected":""}>عربي (أ ب ج د)</option><option value="en" ${isEn(ex)?"selected":""}>إنجليزي (A B C D)</option></select></label></div>${subjectsList()}
     <div class="row" style="margin-top:8px"><label class="f">عدد الأسئلة<input type="number" id="sQ" min="1" max="40" value="${ex.nq}"></label>
     <label class="f">عدد الخيارات<select id="sOpt"><option value="3" ${ex.nopt==3?"selected":""}>3</option><option value="4" ${ex.nopt==4?"selected":""}>4</option></select></label>
     <label class="f">عدد النماذج<select id="sF">${[1,2,3,4,5,6].map(v=>`<option ${ex.nforms==v?"selected":""}>${v}</option>`).join("")}</select></label>
@@ -631,8 +649,9 @@ function bind(){
   on("#goRoster","click",()=>{UI.view="roster";render();});
   on("#back","click",()=>{UI.view="home";UI.review=null;UI.queue=[];render();});
   document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>{UI.exam=Store.exams.find(e=>e.id===b.dataset.open);UI.view="exam";UI.tab="key";UI.form=0;UI.anForm=UI.exam.nforms>1?-1:0;render();});
+  on("#nSubj","input",e=>{ if(/الإنجليزي|الانجليزي|english/i.test(e.target.value)) $("#nLang").value="en"; });
   on("#create","click",async()=>{
-    const ex=newExam({name:$("#nName").value.trim()||"اختبار جديد", subject:$("#nSubj").value.trim(), nq:+$("#nQ").value, nopt:+$("#nOpt").value, nforms:+$("#nF").value, idDigits:+$("#nD").value});
+    const ex=newExam({name:$("#nName").value.trim()||"اختبار جديد", subject:$("#nSubj").value.trim(), lang:$("#nLang").value, nq:+$("#nQ").value, nopt:+$("#nOpt").value, nforms:+$("#nF").value, idDigits:+$("#nD").value});
     Store.exams.push(ex); UI.exam=ex; UI.view="exam"; UI.tab="key"; UI.form=0; UI.anForm=ex.nforms>1?-1:0; render(); Store.saveExam(ex);
   });
   on("#saveRoster","click",()=>{
@@ -684,7 +703,7 @@ function bind(){
     UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); render(); });
   on("#xlsx","click",exportXlsx);
   on("#saveSet","click",()=>{
-    const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.subject=$("#sSubj").value.trim(); ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
+    const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.subject=$("#sSubj").value.trim(); ex.lang=$("#sLang").value==="en"?"en":"ar"; ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
     fixKeys(ex); ex.results.forEach(r=>{ r.ans=Array.from({length:ex.nq},(_,i)=>r.ans[i]??-1); if(r.form>=ex.nforms) r.form=0; r.score=scoreOf(ex,r.form,r.ans); });
     Store.saveExam(ex); toast("تم الحفظ"); render(); });
   on("#delExam","click",async()=>{ if(!await confirmBox("حذف الاختبار «"+UI.exam.name+"» وكل نتائجه؟ ما يمكن التراجع.","حذف نهائي")) return; await Store.deleteExam(UI.exam); UI.view="home"; render(); });
