@@ -119,6 +119,7 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 .cam .res{display:inline-block;margin-top:8px;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.12);font-size:15px}
 .cam .res.ok{background:#1f8a4cE6}.cam .res.bad{background:#b7791fE6}
 .cam .res .sc{font-size:26px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
+.keyup{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .pts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
 .ptin{width:64px!important;padding:5px 6px!important;text-align:center;direction:ltr}
 .keygrid .ptin{margin-inline-start:4px}
@@ -491,6 +492,9 @@ function keyHTML(){
   const ex=UI.exam, f=Math.min(UI.form,ex.nforms-1), key=ex.keys[f];
   const done=key.filter(v=>v>=0).length;
   return `<div class="card"><h2>مفتاح الإجابة</h2>${formTabs(f)}
+    <div class="keyup"><div><b>رفع ملف الإجابات</b><div class="small muted">بدل ما تدخلها يدويًا: صورة أو PDF لورقة إجابة مظللة بالإجابات الصحيحة (ظلّل رمز النموذج)، أو ملف Excel فيه رقم السؤال والإجابة${ex.nforms>1?" لكل نموذج":""}.</div></div>
+      <div class="row"><label class="btn pri" for="keyFile">رفع ملف</label><input type="file" id="keyFile" accept="image/*,.pdf,.xlsx,.xls,.csv" multiple style="display:none">
+      <label class="btn" for="keyCam">تصوير ورقة المفتاح</label><input type="file" id="keyCam" accept="image/*" capture="environment" style="display:none"></div></div>
     <div class="pts"><span class="small muted">درجات الأسئلة:</span>
       <div class="seg" role="group" aria-label="طريقة توزيع الدرجات"><button data-pm="same" class="${ex.ptsMode==="same"?"on":""}">كل الأسئلة نفس الدرجة</button><button data-pm="each" class="${ex.ptsMode==="each"?"on":""}">لكل سؤال درجته</button></div>
       ${ex.ptsMode==="same"?`<label class="small">درجة السؤال <input type="number" id="ptsSame" min="0.25" step="0.25" value="${ex.ptsSame}" class="ptin"></label>`:""}
@@ -674,6 +678,8 @@ function bind(){
   });
   if($("#sheetPrev")) sheetPage(UI.exam, UI.perPage||1, 110).then(P=>{ const p=$("#sheetPrev"); if(!p) return; p.width=P.cv.width; p.height=P.cv.height; p.getContext("2d").drawImage(P.cv,0,0); });
   document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{UI.perPage=+b.dataset.pp;render();});
+  on("#keyFile","change",e=>importKey([...e.target.files]));
+  on("#keyCam","change",e=>importKey([...e.target.files]));
   on("#dlKey","click",async()=>{ try{ await downloadKeyPdf(UI.exam); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); } });
   document.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{ const ex=UI.exam; if(b.dataset.pm==="each" && ex.ptsMode!=="each") ex.qpts=ex.qpts.map(()=>ex.ptsSame); ex.ptsMode=b.dataset.pm; rescore(ex); render(); queueSave(ex); });
   on("#ptsSame","change",e=>{ const ex=UI.exam, v=+e.target.value; if(!(v>0)){ e.target.value=ex.ptsSame; return; } ex.ptsSame=v; rescore(ex); render(); queueSave(ex); });
@@ -755,6 +761,78 @@ async function exportXlsx(){
   try{ await DL.save({filename:"نتائج - "+(ex.subject?ex.subject+" - ":"")+ex.name+".xlsx", data:new Blob([buf])}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التصدير."); }
 }
 
+/* ====================== import the answer key from a file ====================== */
+function ansIndex(v){
+  const t=String(v??"").trim().replace(/[()\.\s]/g,""); if(!t) return -1;
+  const m={"أ":0,"ا":0,"إ":0,"ب":1,"ج":2,"د":3,"a":0,"b":1,"c":2,"d":3,"1":0,"2":1,"3":2,"4":3,"١":0,"٢":1,"٣":2,"٤":3};
+  const r=m[t.toLowerCase()]; return r==null?-1:r;
+}
+function formIndex(h){ const t=String(h).replace(/نموذج|form|model|الإجابة|answer|key|مفتاح/gi,"").trim().replace(/[()\s]/g,"");
+  if(!t) return null; let i=FORM_AR.indexOf(t); if(i<0) i=FORM_EN.indexOf(t.toUpperCase()); if(i<0 && /^[1-6]$/.test(t)) i=+t-1; if(i<0 && t==="ه") i=4; return i<0?null:i; }
+function keyFromRows(ex, rows){
+  rows=rows.map(r=>(r||[]).map(c=>String(c??"").trim()));
+  let hi=rows.findIndex(r=>r.some(c=>/نموذج|form|model|الإجابة|answer|key|مفتاح/i.test(c)));
+  const out={forms:{}, pts:null};
+  let qCol=0, ptCol=-1, fCols=[];
+  if(hi>=0){ const H=rows[hi];
+    H.forEach((c,j)=>{ if(/السؤال|سؤال|question|رقم|^no\.?$|^q$/i.test(c)) qCol=j; else if(/الدرجة|درجة|points|marks|score/i.test(c)) ptCol=j;
+      else if(/نموذج|form|model/i.test(c)){ const f=formIndex(c); if(f!=null) fCols.push([j,f]); }
+      else if(/الإجابة|answer|key|مفتاح/i.test(c)) fCols.push([j,UI.form||0]); });
+  } else { hi=-1; const w=Math.max(...rows.map(r=>r.length)); if(w<=2) fCols.push([1,Math.min(UI.form||0,ex.nforms-1)]); else for(let j=1;j<w;j++) fCols.push([j,j-1]); }
+  if(!fCols.length) return null;
+  const pts=[]; let any=false;
+  rows.slice(hi+1).forEach(r=>{ const q=parseInt(toLatinDigits(r[qCol]||""),10); if(!(q>=1&&q<=ex.nq)) return;
+    fCols.forEach(([j,f])=>{ if(f>=ex.nforms) return; const a=ansIndex(r[j]); if(a>=0&&a<ex.nopt){ (out.forms[f]=out.forms[f]||{})[q-1]=a; any=true; } });
+    if(ptCol>=0){ const v=parseFloat(toLatinDigits(r[ptCol]||"")); if(v>=0) pts[q-1]=v; } });
+  if(pts.length) out.pts=pts;
+  return any?out:null;
+}
+async function loadPdfJs(){
+  if(window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((res,rej)=>{ const sc=document.createElement("script"); sc.src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"; sc.onload=res; sc.onerror=rej; document.head.appendChild(sc); });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  return window.pdfjsLib;
+}
+async function pdfPages(file){
+  const lib=await loadPdfJs(); const doc=await lib.getDocument({data:await file.arrayBuffer()}).promise; const out=[];
+  for(let i=1;i<=Math.min(doc.numPages,12);i++){ const pg=await doc.getPage(i); const vp=pg.getViewport({scale:2.2});
+    const cv=document.createElement("canvas"); cv.width=Math.round(vp.width); cv.height=Math.round(vp.height); await pg.render({canvasContext:cv.getContext("2d"), viewport:vp}).promise; out.push(cv); }
+  return out;
+}
+async function importKey(files){
+  const ex=UI.exam; if(!files.length) return; const msgs=[]; let changed=false;
+  const applyForm=(f,arr,src)=>{ let n=0; for(let i=0;i<ex.nq;i++){ const a=arr[i]; if(a!=null&&a>=0&&a<ex.nopt){ ex.keys[f][i]=a; n++; } } if(n){ changed=true; msgs.push(`نموذج ${FORM_LET[f]}: ${n} من ${ex.nq}${src?" ("+src+")":""}`); } return n; };
+  const fromImage=img=>{ const r=OMR.read(img, ex, 2000); if(!r.ok) return false;
+    let f = ex.nforms>1 ? r.form : 0; if(f<0) f=Math.min(UI.form||0, ex.nforms-1);
+    const blanks=r.answers.filter(a=>a<0).length; applyForm(f, r.answers, blanks?blanks+" سؤال غير واضح":"");
+    return true; };
+  toast("جاري قراءة الملف…");
+  for(const file of files){
+    try{
+      if(/\.(xlsx|xls|csv)$/i.test(file.name)){
+        if(!window.XLSX){ msgs.push("مكتبة Excel ما تحمّلت"); continue; }
+        const wb=XLSX.read(await file.arrayBuffer(),{type:"array"}); let res=null;
+        const names=wb.SheetNames.slice().sort((a,b)=>(/مفتاح|key/i.test(b)?1:0)-(/مفتاح|key/i.test(a)?1:0));
+        for(const n of names){ res=keyFromRows(ex, XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:false})); if(res) break; }
+        if(!res){ msgs.push(file.name+": ما لقيت أعمدة الإجابات"); continue; }
+        Object.entries(res.forms).forEach(([f,arr])=>applyForm(+f, Array.from({length:ex.nq},(_,i)=>arr[i]), ""));
+        if(res.pts && res.pts.some(v=>v>=0)){ const same=res.pts.every(v=>v===res.pts[0]) && res.pts.length>=ex.nq;
+          if(same){ ex.ptsMode="same"; ex.ptsSame=res.pts[0]; } else { ex.ptsMode="each"; ex.qpts=ex.qpts.map((v,i)=>res.pts[i]>=0?res.pts[i]:v); }
+          changed=true; msgs.push("الدرجات: المجموع "+totalOf(ex)); }
+      } else if(/\.pdf$/i.test(file.name) || file.type==="application/pdf"){
+        const pages=await pdfPages(file); let ok=0; for(const cv of pages) if(fromImage(cv)) ok++;
+        if(!ok) msgs.push(file.name+": ما لقيت فيه ورقة إجابة مظللة");
+      } else {
+        const img=await fileToImage(file); if(!fromImage(img)) msgs.push((file.name||"الصورة")+": ما قدرت ألقى المربعات السوداء الأربعة");
+      }
+    }catch(e){ msgs.push((file.name||"الملف")+": تعذّرت قراءته"); }
+  }
+  if(changed){ rescore(ex); Store.saveExam(ex); }
+  render();
+  const L=$("#layer"); L.innerHTML=`<div class="modal"><div class="card"><h2>${changed?"تمت قراءة الإجابات":"ما انقرأت إجابات"}</h2><p class="small">${msgs.map(esc).join("<br>")||"—"}</p><p class="small muted">راجع المفتاح وعدّل أي سؤال بالضغط عليه.</p><div class="row"><button class="btn pri" id="kOk">تمام</button></div></div></div>`;
+  $("#kOk").onclick=()=>{L.innerHTML="";};
+}
+
 /* ====================== live camera (ZipGrade-style) ====================== */
 const Live = {
   stream:null, timer:null, busy:false, last:null, hold:null, lostFrames:0, saved:0,
@@ -826,7 +904,7 @@ const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — ال
   Store.exams.forEach(fixKeys);
   render();
 })();
-window.__test={OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live,renderKey,scoreOf,totalOf};
+window.__test={keyFromRows,importKey,OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live,renderKey,scoreOf,totalOf};
 </script>
 </body>
 </html>
