@@ -265,6 +265,11 @@ const ICONS = {
          <path d="M24 34.5v5M19 40h10" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
          <path d="M18.5 26.3l3.6 3.6 7.2-7.2" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`,
   // ورقة اختبار وعلامات صح
+  // ورقة إجابة بفقاعات
+  grade: `<rect x="13" y="12.5" width="22" height="27" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.8"/>
+         <circle cx="19" cy="20" r="2.2" fill="currentColor"/><circle cx="25.5" cy="20" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+         <circle cx="19" cy="27" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="25.5" cy="27" r="2.2" fill="currentColor"/>
+         <path d="M17.5 34h13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>`,
   // روابط
   links: `<path d="M21.5 33.2l-1.7 1.7a3.8 3.8 0 0 1-5.4-5.4l3.6-3.6a3.8 3.8 0 0 1 5.4 0" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
           <path d="M26.5 27.8l1.7-1.7a3.8 3.8 0 0 1 5.4 5.4l-3.6 3.6a3.8 3.8 0 0 1-5.4 0" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
@@ -288,6 +293,7 @@ const SERVICES = [
   { key:"studio", c:"#B07A12", title:"حجز الأستوديو المدرسي",        desc:"احجز الأستوديو لتسجيل صوتي أو مرئي.",                  href:"../studio/",   api:"https://script.google.com/macros/s/AKfycbyYR3qxRqobK2SyvRGQL2QDanC3J9XuartNBEQ9nTyz5PpSUdG7GQu5b-SpFaBbsRIe-g/exec" },
   { key:"exam",   c:"#4B5563", title:"حجز مركز الاختبارات المحوسبة", desc:"احجز المركز لاختبار إلكتروني لطلابك.",                   href:"../exam/",     api:"https://script.google.com/macros/s/AKfycbxefcOOxxoH-fmYU8yAhD4ync5gnZEz1S-KB5kxZP0XPdJsLUSbIJoHGejXH6CY1BvfOA/exec" },
   { key:"quiz",   c:"#14935A", title:"تقويم الاختبارات القصيرة",     desc:"سجّل اختبارك القصير ووزّع الاختبارات على الأسبوع.",     href:"../quiz/",     api:"https://script.google.com/macros/s/AKfycbwqi1nvZ8pooDL9cTpYvHmX5TluFoQ896D161pUjx9iTnh7KKCJ8jFLu8IltYUeWxa_8w/exec", noDone:true },
+  { key:"grade",  c:"#4338CA", title:"التصحيح الآلي",                desc:"صحّح أوراق الاختيار من متعدد بتصويرها بالجوال، وصدّر النتائج Excel.", href:"../grade/" },
   { key:"safety", c:"#C2410C", title:"بلاغات السلامة والصيانة",      desc:"بلّغ عن خطر أو عطل، وتابع عزل الموقع ومعالجته.",        href:"../safety/" },
   { key:"links",  c:"#0369A1", title:"روابط تهمك",                   desc:"المتمم وبوابة المعلمين ومدرستي في مكان واحد.",          href:"../teacher/" }
 ];
