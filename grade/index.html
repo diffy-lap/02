@@ -64,7 +64,7 @@ textarea{min-height:140px;direction:rtl}
 .tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:14px}
 .tab{border:0;background:none;padding:10px 12px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:3px solid transparent;white-space:nowrap}
 .tab.on{color:var(--accent);border-bottom-color:var(--accent)}
-.keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px}
+.keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 14px}
 .krow{display:flex;align-items:center;gap:6px}
 .krow .n{width:24px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700}
 .opt{width:32px;height:32px;border-radius:50%;border:1.6px solid var(--line);background:var(--bg);cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -119,6 +119,9 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 .cam .res{display:inline-block;margin-top:8px;padding:10px 16px;border-radius:14px;background:rgba(255,255,255,.12);font-size:15px}
 .cam .res.ok{background:#1f8a4cE6}.cam .res.bad{background:#b7791fE6}
 .cam .res .sc{font-size:26px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
+.pts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:10px}
+.ptin{width:64px!important;padding:5px 6px!important;text-align:center;direction:ltr}
+.keygrid .ptin{margin-inline-start:4px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{border:0;background:var(--surface);padding:9px 14px;cursor:pointer;font-weight:500}
 .seg button.on{background:var(--accent);color:#fff}
@@ -134,7 +137,8 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 "use strict";
 /* ====================== constants & helpers ====================== */
 const LET = ["أ","ب","ج","د"];
-const FORM_LET = ["أ","ب","ج","د"];
+const FORM_LET = ["أ","ب","ج","د","هـ","و"];
+const MAXF = 6;
 const $ = (s, el=document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -173,15 +177,23 @@ function newExam(o){
   fixKeys(ex); return ex;
 }
 function fixKeys(ex){
-  ex.nq=Math.max(1,Math.min(40,ex.nq|0)); ex.nopt=ex.nopt==4?4:3; ex.nforms=Math.max(1,Math.min(4,ex.nforms|0)); ex.idDigits=Math.max(3,Math.min(10,ex.idDigits|0));
+  ex.nq=Math.max(1,Math.min(40,ex.nq|0)); ex.nopt=ex.nopt==4?4:3; ex.nforms=Math.max(1,Math.min(MAXF,ex.nforms|0)); ex.idDigits=Math.max(3,Math.min(10,ex.idDigits|0));
   ex.keys = ex.keys||[];
-  for(let f=0;f<4;f++){ const k=ex.keys[f]||[]; ex.keys[f]=Array.from({length:ex.nq},(_,i)=> (k[i]!=null && k[i]<ex.nopt)?k[i]:-1); }
-  ex.keys.length=4;
+  for(let f=0;f<MAXF;f++){ const k=ex.keys[f]||[]; ex.keys[f]=Array.from({length:ex.nq},(_,i)=> (k[i]!=null && k[i]<ex.nopt)?k[i]:-1); }
+  ex.keys.length=MAXF;
+  // points: one value for every question, or a value per question
+  if(ex.ptsMode!=="each") ex.ptsMode="same";
+  const same=+ex.ptsSame>0?+ex.ptsSame:1; ex.ptsSame=same;
+  const q=ex.qpts||[]; ex.qpts=Array.from({length:ex.nq},(_,i)=>{ const v=+q[i]; return v>0?v:same; });
 }
+function qpt(ex,i){ return ex.ptsMode==="each" ? (ex.qpts[i]||0) : ex.ptsSame; }
+function totalOf(ex){ let t=0; for(let i=0;i<ex.nq;i++) t+=qpt(ex,i); return rnd(t); }
+function rnd(x){ return Math.round(x*100)/100; }
+function rescore(ex){ ex.results.forEach(r=>{ r.score=scoreOf(ex,r.form,r.ans); }); }
 function scoreOf(ex, form, ans){
   const key=ex.keys[form]||[]; let s=0;
-  for(let i=0;i<ex.nq;i++) if(key[i]>=0 && ans[i]===key[i]) s++;
-  return s;
+  for(let i=0;i<ex.nq;i++) if(key[i]>=0 && ans[i]===key[i]) s+=qpt(ex,i);
+  return rnd(s);
 }
 function keyComplete(ex, f){ return ex.keys[f].every(v=>v>=0); }
 
@@ -192,7 +204,7 @@ function layout(ex){
   const L = {id:[], form:[], q:[]};
   const n=ex.idDigits, x0 = 55-(n-1)*3.6;
   for(let c=0;c<n;c++){ const col=[]; for(let d=0;d<10;d++) col.push({x:x0+c*7.2, y:58+d*5.4, r:2.2}); L.id.push(col); }
-  for(let f=0;f<ex.nforms;f++) L.form.push({x:176-f*12, y:62, r:3.3});
+  for(let f=0;f<ex.nforms;f++) L.form.push(ex.nforms<=4 ? {x:176-f*12, y:62, r:3.3} : {x:178-(f%3)*16, y:f<3?56:67, r:3.3});
   const cols = ex.nq>20?2:1, per = Math.ceil(ex.nq/cols);
   const sp = Math.min(7.4, per>1 ? 140/(per-1) : 7.4);
   for(let i=0;i<ex.nq;i++){
@@ -221,7 +233,7 @@ async function renderSheet(ex, pxPerMm=11.811){
   g.textAlign="left"; g.font=F(700,3.1); g.fillStyle="#07277A"; g.fillText("بوابة واعد",38*k,11*k);
   g.font=F(500,2.8); g.fillStyle="#333"; g.fillText("خدمة التصحيح الآلي",38*k,15.5*k);
   g.textAlign="center"; g.fillStyle="#000"; g.font=F(700,4.6); g.fillText(ex.name, 105*k, 22.5*k);
-  g.font=F(500,3.1); g.fillStyle="#444"; g.fillText((ex.subject?"المادة: "+ex.subject+"   •   ":"")+"ورقة الإجابة   •   "+ex.nq+" سؤال", 105*k, 27.3*k);
+  g.font=F(500,3.1); g.fillStyle="#444"; g.fillText((ex.subject?"المادة: "+ex.subject+"   •   ":"")+"ورقة الإجابة   •   "+ex.nq+" سؤال   •   الدرجة "+totalOf(ex), 105*k, 27.3*k);
   g.textAlign="right"; g.font=F(500,3.6); g.fillStyle="#000";
   g.fillText("اسم الطالب: ..................................................", 192*k, 33.5*k);
   g.textAlign="left"; g.fillText("الفصل: ..............", 20*k, 33.5*k);
@@ -421,7 +433,7 @@ function homeHTML(){
       <div class="row" style="margin-top:8px">
         <label class="f">عدد الأسئلة<input type="number" id="nQ" min="1" max="40" value="20"></label>
         <label class="f">عدد الخيارات<select id="nOpt"><option value="3">3 (أ ب ج)</option><option value="4">4 (أ ب ج د)</option></select></label>
-        <label class="f">عدد النماذج<select id="nF"><option>1</option><option>2</option><option>3</option><option selected>4</option></select></label>
+        <label class="f">عدد النماذج<select id="nF">${[1,2,3,4,5,6].map(v=>`<option ${v===4?"selected":""}>${v}</option>`).join("")}</select></label>
         <label class="f">خانات رقم الطالب<input type="number" id="nD" min="3" max="10" value="10"></label>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn pri" id="create">إنشاء الاختبار</button></div>
@@ -448,7 +460,7 @@ function parseRosterRows(rows){
 function examHTML(){
   const ex=UI.exam;
   const tabs=[["key","المفتاح"],["sheet","ورقة الإجابة"],["scan","التصحيح"],["results","النتائج"],["analysis","تحليل الأسئلة"],["settings","الإعدادات"]];
-  return `<header class="top"><div><h1>${esc(ex.name)}</h1><div class="sub">${ex.subject?esc(ex.subject)+" • ":""}${ex.nq} سؤال • ${ex.nopt} خيارات • ${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</div></div><button class="btn" id="back">كل الاختبارات</button></header>
+  return `<header class="top"><div><h1>${esc(ex.name)}</h1><div class="sub">${ex.subject?esc(ex.subject)+" • ":""}${ex.nq} سؤال • الدرجة ${totalOf(ex)} • ${ex.nopt} خيارات • ${ex.nforms} ${ex.nforms>1?"نماذج":"نموذج"}</div></div><button class="btn" id="back">كل الاختبارات</button></header>
   <nav class="tabs">${tabs.map(([k,t])=>`<button class="tab ${UI.tab===k?"on":""}" data-tab="${k}">${t}</button>`).join("")}</nav>
   <section id="panel">${({key:keyHTML,sheet:sheetHTML,scan:scanHTML,results:resultsHTML,analysis:analysisHTML,settings:settingsHTML})[UI.tab]()}</section>`;
 }
@@ -463,8 +475,13 @@ function keyHTML(){
   const ex=UI.exam, f=Math.min(UI.form,ex.nforms-1), key=ex.keys[f];
   const done=key.filter(v=>v>=0).length;
   return `<div class="card"><h2>مفتاح الإجابة</h2>${formTabs(f)}
-    <p class="small muted">اضغط الإجابة الصحيحة لكل سؤال${ex.nforms>1?" في نموذج "+FORM_LET[f]:""}. مكتمل ${done} من ${ex.nq}.</p>
-    <div class="keygrid">${key.map((v,i)=>`<div class="krow"><span class="n">${i+1}</span>${Array.from({length:ex.nopt},(_,o)=>`<button class="opt ${v===o?"on":""}" data-k="${i}:${o}" aria-label="سؤال ${i+1} الخيار ${LET[o]}">${LET[o]}</button>`).join("")}</div>`).join("")}</div></div>`;
+    <div class="pts"><span class="small muted">درجات الأسئلة:</span>
+      <div class="seg" role="group" aria-label="طريقة توزيع الدرجات"><button data-pm="same" class="${ex.ptsMode==="same"?"on":""}">كل الأسئلة نفس الدرجة</button><button data-pm="each" class="${ex.ptsMode==="each"?"on":""}">لكل سؤال درجته</button></div>
+      ${ex.ptsMode==="same"?`<label class="small">درجة السؤال <input type="number" id="ptsSame" min="0.25" step="0.25" value="${ex.ptsSame}" class="ptin"></label>`:""}
+      <span class="chip">المجموع ${totalOf(ex)}</span></div>
+    <p class="small muted">اضغط الإجابة الصحيحة لكل سؤال${ex.nforms>1?" في نموذج "+FORM_LET[f]:""}. مكتمل ${done} من ${ex.nq}.${ex.ptsMode==="each"?" اكتب درجة كل سؤال في الخانة اللي جنبه (نفس الدرجة في كل النماذج).":""}</p>
+    <div class="keygrid">${key.map((v,i)=>`<div class="krow"><span class="n">${i+1}</span>${Array.from({length:ex.nopt},(_,o)=>`<button class="opt ${v===o?"on":""}" data-k="${i}:${o}" aria-label="سؤال ${i+1} الخيار ${LET[o]}">${LET[o]}</button>`).join("")}${ex.ptsMode==="each"?`<input type="number" class="ptin" data-qp="${i}" min="0" step="0.25" value="${ex.qpts[i]}" aria-label="درجة السؤال ${i+1}">`:""}</div>`).join("")}</div>
+    <div class="row" style="margin-top:14px"><button class="btn" id="dlKey">تحميل نموذج الإجابة (PDF)</button><span class="small muted">صفحة لكل نموذج، الإجابات الصحيحة مظللة ودرجة كل سؤال</span></div></div>`;
 }
 function sheetHTML(){
   const n=UI.perPage||1;
@@ -474,12 +491,36 @@ function sheetHTML(){
       <div class="seg" role="group" aria-label="عدد النماذج في الصفحة"><button data-pp="1" class="${n===1?"on":""}">نموذج واحد</button><button data-pp="2" class="${n===2?"on":""}">نموذجين</button></div></div>
     ${n===2?'<p class="small muted">نموذجين جنب بعض على ورقة A4 بالعرض، قصّها من الخط المنقط في النص. كل نصف يُصحَّح لحاله.</p>':""}
     <canvas id="sheetPrev" class="sheetprev" style="${n===2?"max-width:560px":""}" aria-label="معاينة ورقة الإجابة"></canvas>
-    <div class="row"><button class="btn pri" id="dlSheet">تحميل ورقة الإجابة (PDF)</button>
+    <div class="row"><button class="btn pri" id="dlSheet">تحميل ورقة الإجابة (PDF)</button><button class="btn" id="dlKey">تحميل نموذج الإجابة (PDF)</button>
     </div></div>`;
 }
 function subjectsList(){
   const S=["الكيمياء","الفيزياء","الأحياء","علم البيئة","علوم الأرض والفضاء","الرياضيات","اللغة العربية","اللغة الإنجليزية","الدراسات الإسلامية","الدراسات الاجتماعية","التاريخ","الجغرافيا","الحاسب وتقنية المعلومات","التقنية الرقمية","التفكير الناقد","المهارات الحياتية","التربية المهنية","الإدارة المالية","التربية البدنية"];
   return `<datalist id="subjects">${S.map(x=>`<option value="${x}">`).join("")}</datalist>`;
+}
+/* answer key: the same sheet with the correct bubbles filled, one page per form */
+async function renderKey(ex, f, k){
+  const cv=await renderSheet(ex, k), g=cv.getContext("2d"), L=layout(ex), key=ex.keys[f];
+  const F=(w,mm)=>`${w} ${mm*k}px "IBM Plex Sans Arabic", Tahoma, sans-serif`;
+  // cover the name line with a key banner
+  g.fillStyle="#fff"; g.fillRect(18*k,29.5*k,176*k,7*k);
+  g.fillStyle="#07277A"; g.font=F(700,4.2); g.textAlign="center"; g.textBaseline="middle"; g.direction="rtl";
+  g.fillText("نموذج الإجابة"+(ex.nforms>1?" — نموذج "+FORM_LET[f]:"")+"   •   المجموع "+totalOf(ex)+" درجة", 105*k, 33.2*k);
+  g.fillStyle="#111";
+  L.q.forEach((q,i)=>{ const a=key[i]; if(a>=0){ const b=q.opts[a]; g.beginPath(); g.arc(b.x*k,b.y*k,b.r*0.9*k,0,7); g.fill();
+      g.fillStyle="#fff"; g.font=F(700,2.6); g.fillText(LET[a],b.x*k,(b.y+0.15)*k); g.fillStyle="#111"; }
+    const last=q.opts[q.opts.length-1]; g.fillStyle="#07277A"; g.font=F(700,2.7); g.textAlign="center";
+    g.fillText("("+qpt(ex,i)+")", (last.x-7.5)*k, q.y*k); g.fillStyle="#111"; });
+  if(ex.nforms>1){ const b=L.form[f]; g.beginPath(); g.arc(b.x*k,b.y*k,b.r*0.9*k,0,7); g.fill(); }
+  return cv;
+}
+async function downloadKeyPdf(ex){
+  if(!window.jspdf){ toast("مكتبة PDF ما تحمّلت، تأكد من الاتصال."); return; }
+  const miss=[...Array(ex.nforms).keys()].filter(f=>!keyComplete(ex,f));
+  if(miss.length) toast("تنبيه: مفتاح "+miss.map(f=>"نموذج "+FORM_LET[f]).join("، ")+" ناقص");
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({orientation:"portrait", unit:"mm", format:"a4", compress:true});
+  for(let f=0;f<ex.nforms;f++){ if(f) pdf.addPage("a4","portrait"); const cv=await renderKey(ex,f,300/25.4); pdf.addImage(cv.toDataURL("image/png"),"PNG",0,0,210,297,undefined,"FAST"); }
+  await DL.save({filename:"نموذج الإجابة - "+ex.name+".pdf", data:pdf.output("blob")});
 }
 /* sheet pages: one A4 portrait sheet, or two sheets side by side on A4 landscape (each = A5) */
 async function sheetPage(ex, perPage, dpi){
@@ -520,7 +561,7 @@ function reviewHTML(){
   const exists=ex.results.find(r=>r.sid===R.id);
   return `${UI.queue.length?`<p class="small muted">باقي ${UI.queue.length} صورة بعد هذي</p>`:""}
    ${R.canvas?'<canvas id="ovl" class="overlay"></canvas>':""}
-   <div class="row" style="justify-content:space-between;margin-bottom:8px"><div><div class="score">${sc} / ${ex.nq}</div><div class="small muted">${Math.round(sc/ex.nq*100)}%</div></div>
+   <div class="row" style="justify-content:space-between;margin-bottom:8px"><div><div class="score">${sc} / ${totalOf(ex)}</div><div class="small muted">${Math.round(sc/totalOf(ex)*100)}%</div></div>
    ${R.flags?`<span class="chip warn">${R.flags} سؤال يحتاج مراجعة</span>`:'<span class="chip">قراءة واضحة</span>'}</div>
    <div class="row"><label class="f">رقم الطالب<input type="text" id="rId" class="ltr" inputmode="numeric" value="${esc(R.id)}"></label>
    ${ex.nforms>1?`<label class="f">النموذج<select id="rForm">${[...Array(ex.nforms).keys()].map(f=>`<option value="${f}" ${R.form===f?"selected":""}>${FORM_LET[f]}</option>`).join("")}</select></label>`:""}</div>
@@ -535,19 +576,19 @@ function reviewHTML(){
 function stats(ex, list){
   const s=list.map(r=>r.score); const n=s.length;
   if(!n) return null;
-  return {n, avg:s.reduce((a,b)=>a+b,0)/n, max:Math.max(...s), min:Math.min(...s), pass:s.filter(v=>v>=ex.nq/2).length};
+  return {n, avg:s.reduce((a,b)=>a+b,0)/n, max:Math.max(...s), min:Math.min(...s), pass:s.filter(v=>v>=totalOf(ex)/2).length};
 }
 function resultsHTML(){
   const ex=UI.exam, rs=ex.results.slice().sort((a,b)=>b.score-a.score), st=stats(ex,rs);
   return `<div class="card"><h2>النتائج</h2>
    ${st?`<div class="tiles"><div class="tile"><div class="v">${st.n}</div><div class="l">ورقة مصححة</div></div>
-   <div class="tile"><div class="v">${st.avg.toFixed(1)}</div><div class="l">المتوسط من ${ex.nq}</div></div>
+   <div class="tile"><div class="v">${st.avg.toFixed(1)}</div><div class="l">المتوسط من ${totalOf(ex)}</div></div>
    <div class="tile"><div class="v">${st.max}</div><div class="l">أعلى درجة</div></div>
    <div class="tile"><div class="v">${st.min}</div><div class="l">أدنى درجة</div></div>
    <div class="tile"><div class="v">${st.pass}</div><div class="l">ناجح (50% فأكثر)</div></div></div>`:'<p class="muted">ما فيه أوراق مصححة بعد. روح لتبويب التصحيح وصوّر أول ورقة.</p>'}
    ${rs.length?`<div class="row" style="margin-bottom:10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button></div>
    <div class="tablewrap"><table><thead><tr><th>رقم الطالب</th><th>الاسم</th><th>الفصل</th>${ex.nforms>1?"<th>النموذج</th>":""}<th>الدرجة</th><th>النسبة</th><th></th></tr></thead><tbody>
-   ${rs.map(r=>{const p=Math.round(r.score/ex.nq*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${ex.nq}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td><button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
+   ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td><button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
    </tbody></table></div>`:""}</div>`;
 }
 function itemStats(ex, f){
@@ -578,7 +619,7 @@ function settingsHTML(){
     <label class="f">المادة<input type="text" id="sSubj" list="subjects" value="${esc(ex.subject||"")}"></label></div>${subjectsList()}
     <div class="row" style="margin-top:8px"><label class="f">عدد الأسئلة<input type="number" id="sQ" min="1" max="40" value="${ex.nq}"></label>
     <label class="f">عدد الخيارات<select id="sOpt"><option value="3" ${ex.nopt==3?"selected":""}>3</option><option value="4" ${ex.nopt==4?"selected":""}>4</option></select></label>
-    <label class="f">عدد النماذج<select id="sF">${[1,2,3,4].map(v=>`<option ${ex.nforms==v?"selected":""}>${v}</option>`).join("")}</select></label>
+    <label class="f">عدد النماذج<select id="sF">${[1,2,3,4,5,6].map(v=>`<option ${ex.nforms==v?"selected":""}>${v}</option>`).join("")}</select></label>
     <label class="f">خانات رقم الطالب<input type="number" id="sD" min="3" max="10" value="${ex.idDigits}"></label></div>
     ${ex.results.length?'<p class="small" style="color:var(--warn)">تغيير الأسئلة أو الخيارات أو خانات الرقم بعد التصحيح يغيّر شكل ورقة الإجابة، فالأوراق المطبوعة سابقًا ما تنقرأ صح.</p>':""}
     <div class="row" style="margin-top:12px"><button class="btn pri" id="saveSet">حفظ الإعدادات</button><button class="btn danger" id="delExam">حذف الاختبار</button></div></div>`;
@@ -614,6 +655,10 @@ function bind(){
   });
   if($("#sheetPrev")) sheetPage(UI.exam, UI.perPage||1, 110).then(P=>{ const p=$("#sheetPrev"); if(!p) return; p.width=P.cv.width; p.height=P.cv.height; p.getContext("2d").drawImage(P.cv,0,0); });
   document.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>{UI.perPage=+b.dataset.pp;render();});
+  on("#dlKey","click",async()=>{ try{ await downloadKeyPdf(UI.exam); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); } });
+  document.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{ const ex=UI.exam; if(b.dataset.pm==="each" && ex.ptsMode!=="each") ex.qpts=ex.qpts.map(()=>ex.ptsSame); ex.ptsMode=b.dataset.pm; rescore(ex); render(); queueSave(ex); });
+  on("#ptsSame","change",e=>{ const ex=UI.exam, v=+e.target.value; if(!(v>0)){ e.target.value=ex.ptsSame; return; } ex.ptsSame=v; rescore(ex); render(); queueSave(ex); });
+  document.querySelectorAll("[data-qp]").forEach(inp=>inp.onchange=()=>{ const ex=UI.exam, i=+inp.dataset.qp, v=+inp.value; ex.qpts[i]= v>=0?v:0; rescore(ex); render(); queueSave(ex); });
   on("#dlSheet","click",async()=>{
     try{ await downloadSheetPdf(UI.exam, UI.perPage||1); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); }
   });
@@ -631,7 +676,7 @@ function bind(){
     if(!R.id || R.id.includes("?")){ toast("اكتب رقم الطالب كاملًا قبل الحفظ."); return; }
     const rec={sid:R.id, form:R.form, ans:R.answers.map(a=>a<0?-1:a), score:scoreOf(ex,R.form,R.answers), at:Date.now()};
     ex.results=ex.results.filter(r=>r.sid!==R.id); ex.results.push(rec); Store.saveExam(ex);
-    toast(`تم حفظ ${sName(R.id)||R.id}: ${rec.score} / ${ex.nq}`); nextInQueue();
+    toast(`تم حفظ ${sName(R.id)||R.id}: ${rec.score} / ${totalOf(ex)}`); nextInQueue();
   });
   on("#skipRes","click",()=>nextInQueue());
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
@@ -679,13 +724,13 @@ async function exportXlsx(){
   const head=["رقم الطالب","الاسم","الفصل"]; if(ex.nforms>1) head.push("النموذج"); head.push("الدرجة","من","النسبة %");
   for(let i=1;i<=ex.nq;i++) head.push("س"+i);
   const rows=ex.results.slice().sort((a,b)=>a.sid.localeCompare(b.sid)).map(r=>{ const row=[r.sid, sName(r.sid), sCls(r.sid)]; if(ex.nforms>1) row.push(FORM_LET[r.form]);
-    row.push(r.score, ex.nq, Math.round(r.score/ex.nq*1000)/10); r.ans.forEach(a=>row.push(a>=0?LET[a]:"")); return row; });
+    row.push(r.score, totalOf(ex), Math.round(r.score/totalOf(ex)*1000)/10); r.ans.forEach(a=>row.push(a>=0?LET[a]:"")); return row; });
   const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
   const ws=XLSX.utils.aoa_to_sheet([head,...rows]); ws["!cols"]=[{wch:13},{wch:28}]; XLSX.utils.book_append_sheet(wb,ws,"النتائج");
   const an=[["السؤال", ...(ex.nforms>1?FORM_LET.slice(0,ex.nforms).map(l=>"مفتاح "+l):["المفتاح"]), "عدد من أجاب صح","نسبة الإجابة الصحيحة %", ...LET.slice(0,ex.nopt), "فارغ"]];
   itemStats(ex,-1).forEach((t,i)=>an.push([i+1, ...ex.keys.slice(0,ex.nforms).map(k=>k[i]>=0?LET[k[i]]:""), t.right, Math.round(t.pct*10)/10, ...t.counts, t.blank]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(an),"تحليل الأسئلة");
-  const kk=[["السؤال",...FORM_LET.slice(0,ex.nforms).map(l=>"نموذج "+l)]]; for(let i=0;i<ex.nq;i++) kk.push([i+1,...ex.keys.slice(0,ex.nforms).map(k=>k[i]>=0?LET[k[i]]:"")]);
+  const kk=[["السؤال","الدرجة",...FORM_LET.slice(0,ex.nforms).map(l=>"نموذج "+l)]]; for(let i=0;i<ex.nq;i++) kk.push([i+1,qpt(ex,i),...ex.keys.slice(0,ex.nforms).map(k=>k[i]>=0?LET[k[i]]:"")]); kk.push(["المجموع",totalOf(ex)]);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(kk),"مفتاح الإجابة");
   const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});
   try{ await DL.save({filename:"نتائج - "+(ex.subject?ex.subject+" - ":"")+ex.name+".xlsx", data:new Blob([buf])}); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر التصدير."); }
@@ -737,7 +782,7 @@ const Live = {
       ex.results.push({sid:res.id, form, ans:res.answers.slice(), score:sc, at:Date.now()}); Store.saveExam(ex);
       this.saved++; this.hold=res.id; this.last=null; this.beep(); if(navigator.vibrate) navigator.vibrate(80);
       const nm=sName(res.id);
-      this.showRes(`<span class="sc">${sc} / ${ex.nq}</span>${esc(nm||res.id)}${ex.nforms>1?" • نموذج "+FORM_LET[form]:""}`, "ok");
+      this.showRes(`<span class="sc">${sc} / ${totalOf(ex)}</span>${esc(nm||res.id)}${ex.nforms>1?" • نموذج "+FORM_LET[form]:""}`, "ok");
       const c=$("#camCount"); if(c) c.textContent="صُحّحت "+this.saved+" ورقة";
       this.status("تم الحفظ ✓ — شيل الورقة وحط اللي بعدها");
       this.loop(); return;
@@ -762,7 +807,7 @@ const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — ال
   Store.exams.forEach(fixKeys);
   render();
 })();
-window.__test={OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live};
+window.__test={OMR,renderSheet,layout,SEED,fixKeys,sheetPage,Live,renderKey,scoreOf,totalOf};
 </script>
 </body>
 </html>
