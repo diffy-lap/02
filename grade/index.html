@@ -649,15 +649,29 @@ function stats(ex, list){
   if(!n) return null;
   return {n, avg:s.reduce((a,b)=>a+b,0)/n, max:Math.max(...s), min:Math.min(...s), pass:s.filter(v=>v>=totalOf(ex)/2).length};
 }
+/* classes: "الثاني ثانوي 3" → sorted by grade then section number; students not on the list go last */
+const NO_CLS="بدون فصل";
+function clsOf(r){ return sCls(r.sid)||NO_CLS; }
+function clsRank(c){ if(c===NO_CLS) return [9,0,c]; const g=/أول|1/.test(c)&&!/ثاني|ثالث/.test(c)?1:/ثاني/.test(c)?2:/ثالث/.test(c)?3:8; const n=+((c.match(/(\d+)\s*$/)||[])[1]||0); return [g,n,c]; }
+function clsSort(a,b){ const x=clsRank(a), y=clsRank(b); return x[0]-y[0]||x[1]-y[1]||x[2].localeCompare(y[2],"ar"); }
+function classesOf(ex){ return [...new Set(ex.results.map(clsOf))].sort(clsSort); }
 function resultsHTML(){
-  const ex=UI.exam, rs=ex.results.slice().sort((a,b)=>b.score-a.score), st=stats(ex,rs);
+  const ex=UI.exam, classes=classesOf(ex);
+  if(UI.cls && !classes.includes(UI.cls)) UI.cls="";
+  const all=ex.results.slice().sort((a,b)=>b.score-a.score), rs=UI.cls?all.filter(r=>clsOf(r)===UI.cls):all, st=stats(ex,rs);
+  const multi=classes.length>1;
+  const summary = multi ? `<h3 style="margin:16px 0 8px;font-size:15px">حسب الفصول</h3><div class="tablewrap"><table><thead><tr><th>الفصل</th><th>الأوراق</th><th>المتوسط</th><th>أعلى</th><th>أدنى</th><th>ناجح</th></tr></thead><tbody>
+    ${classes.map(c=>{ const t=stats(ex,all.filter(r=>clsOf(r)===c)); return `<tr data-cls="${esc(c)}" style="cursor:pointer"><td><b>${esc(c)}</b></td><td>${t.n}</td><td>${t.avg.toFixed(1)}</td><td>${t.max}</td><td>${t.min}</td><td>${t.pass} <span class="muted small">(${Math.round(t.pass/t.n*100)}%)</span></td></tr>`; }).join("")}
+    </tbody></table></div>` : "";
   return `<div class="card"><h2>النتائج</h2>
+   ${multi?`<div class="seg" role="group" aria-label="الفصل" style="flex-wrap:wrap;margin-bottom:12px"><button data-cls="" class="${UI.cls?"":"on"}">كل الفصول</button>${classes.map(c=>`<button data-cls="${esc(c)}" class="${UI.cls===c?"on":""}">${esc(c)}</button>`).join("")}</div>`:""}
    ${st?`<div class="tiles"><div class="tile"><div class="v">${st.n}</div><div class="l">ورقة مصححة</div></div>
    <div class="tile"><div class="v">${st.avg.toFixed(1)}</div><div class="l">المتوسط من ${totalOf(ex)}</div></div>
    <div class="tile"><div class="v">${st.max}</div><div class="l">أعلى درجة</div></div>
    <div class="tile"><div class="v">${st.min}</div><div class="l">أدنى درجة</div></div>
    <div class="tile"><div class="v">${st.pass}</div><div class="l">ناجح (50% فأكثر)</div></div></div>`:'<p class="muted">ما فيه أوراق مصححة بعد. روح لتبويب التصحيح وصوّر أول ورقة.</p>'}
-   ${rs.length?`<div class="row" style="margin-bottom:10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button></div>
+   ${!UI.cls?summary:""}
+   ${rs.length?`<div class="row" style="margin:12px 0 10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button>${multi?'<span class="small muted">فيه ورقة لكل فصل</span>':""}</div>
    <div class="tablewrap"><table><thead><tr><th>رقم الطالب</th><th>الاسم</th><th>الفصل</th>${ex.nforms>1?"<th>النموذج</th>":""}<th>الدرجة</th><th>النسبة</th><th></th></tr></thead><tbody>
    ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td><button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
    </tbody></table></div>`:""}</div>`;
@@ -780,6 +794,7 @@ function bind(){
     if(!await confirmBox("حذف نتيجة الطالب "+b.dataset.del+"؟","حذف")) return;
     UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); render(); });
   on("#xlsx","click",exportXlsx);
+  document.querySelectorAll("[data-cls]").forEach(b=>b.onclick=()=>{ UI.cls=b.dataset.cls; render(); });
   on("#saveSet","click",()=>{
     const ex=UI.exam; ex.name=$("#sName").value.trim()||ex.name; ex.subject=$("#sSubj").value.trim(); ex.lang=$("#sLang").value==="en"?"en":"ar"; ex.nq=+$("#sQ").value; ex.nopt=+$("#sOpt").value; ex.nforms=+$("#sF").value; ex.idDigits=+$("#sD").value;
     if(ex.bank){ ex.nq=ex.bank.length; ex.nopt=Math.max(ex.nopt, Math.max(...ex.bank.map(q=>q.opts.length))); }
@@ -821,10 +836,20 @@ async function exportXlsx(){
   const ex=UI.exam; if(!window.XLSX){ toast("مكتبة Excel ما تحمّلت، تأكد من الاتصال."); return; }
   const head=["رقم الطالب","الاسم","الفصل"]; if(ex.nforms>1) head.push("النموذج"); head.push("الدرجة","من","النسبة %");
   for(let i=1;i<=ex.nq;i++) head.push("س"+i);
-  const rows=ex.results.slice().sort((a,b)=>a.sid.localeCompare(b.sid)).map(r=>{ const row=[r.sid, sName(r.sid), sCls(r.sid)]; if(ex.nforms>1) row.push(FORM_LET[r.form]);
-    row.push(r.score, totalOf(ex), Math.round(r.score/totalOf(ex)*1000)/10); r.ans.forEach(a=>row.push(a>=0?LET[a]:"")); return row; });
+  const sorted=ex.results.slice().sort((a,b)=>clsSort(clsOf(a),clsOf(b))||(sName(a.sid)||a.sid).localeCompare(sName(b.sid)||b.sid,"ar"));
+  const toRow=r=>{ const row=[r.sid, sName(r.sid), sCls(r.sid)]; if(ex.nforms>1) row.push(FORM_LET[r.form]);
+    row.push(r.score, totalOf(ex), Math.round(r.score/totalOf(ex)*1000)/10); r.ans.forEach(a=>row.push(a>=0?LET[a]:"")); return row; };
   const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
-  const ws=XLSX.utils.aoa_to_sheet([head,...rows]); ws["!cols"]=[{wch:13},{wch:28}]; XLSX.utils.book_append_sheet(wb,ws,"النتائج");
+  const ws=XLSX.utils.aoa_to_sheet([head,...sorted.map(toRow)]); ws["!cols"]=[{wch:13},{wch:28},{wch:16}]; XLSX.utils.book_append_sheet(wb,ws,"النتائج");
+  const classes=classesOf(ex);
+  if(classes.length>1){
+    const sum=[["الفصل","عدد الأوراق","المتوسط","من","أعلى درجة","أدنى درجة","ناجح","نسبة النجاح %"]];
+    classes.forEach(c=>{ const t=stats(ex,sorted.filter(r=>clsOf(r)===c)); sum.push([c,t.n,Math.round(t.avg*10)/10,totalOf(ex),t.max,t.min,t.pass,Math.round(t.pass/t.n*1000)/10]); });
+    const s2=XLSX.utils.aoa_to_sheet(sum); s2["!cols"]=[{wch:18}]; XLSX.utils.book_append_sheet(wb,s2,"ملخص الفصول");
+    const used=new Set(["النتائج","ملخص الفصول","تحليل الأسئلة","مفتاح الإجابة"]);
+    classes.forEach(c=>{ let nm=c.replace(/[\\\/\?\*\[\]:]/g," ").slice(0,31)||"فصل"; while(used.has(nm)) nm=nm.slice(0,29)+"_"+used.size; used.add(nm);
+      const w=XLSX.utils.aoa_to_sheet([head,...sorted.filter(r=>clsOf(r)===c).map(toRow)]); w["!cols"]=[{wch:13},{wch:28},{wch:16}]; XLSX.utils.book_append_sheet(wb,w,nm); });
+  }
   const an=[["السؤال", ...(ex.nforms>1?FORM_LET.slice(0,ex.nforms).map(l=>"مفتاح "+l):["المفتاح"]), "عدد من أجاب صح","نسبة الإجابة الصحيحة %", ...LET.slice(0,ex.nopt), "فارغ"]];
   itemStats(ex,-1).forEach((t,i)=>an.push([i+1, ...ex.keys.slice(0,ex.nforms).map(k=>k[i]>=0?LET[k[i]]:""), t.right, Math.round(t.pct*10)/10, ...t.counts, t.blank]));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(an),"تحليل الأسئلة");
