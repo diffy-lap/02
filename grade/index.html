@@ -291,7 +291,10 @@ async function renderSheet(ex, pxPerMm=11.811, marksOnly=false){
   g.strokeStyle="#9aa"; g.lineWidth=0.3*k; roundRect(g,(idL)*k,38*k,(idR-idL)*k,76*k,2*k); g.stroke();
   g.textAlign="center"; g.font=F(700,3.4); g.fillStyle="#000"; g.fillText(en?"Student ID (bubble each digit)":"رقم الطالب (ظلّل الرقم)", ((idL+idR)/2)*k, 42*k);
   g.lineWidth=0.25*k; g.strokeStyle="#777";
-  L.id.forEach(col=>{ g.strokeRect((col[0].x-2.8)*k,46*k,5.6*k,6*k); col.forEach((b,d)=>bubble(g,k,b,String(d),2.3)); });
+  L.id.forEach(col=>{ g.strokeRect((col[0].x-2.8)*k,46*k,5.6*k,6*k); col.forEach((b,d)=>bubble(g,k,b,String(d),2.3,"#8a9190",0.72)); });
+  // the digit of each row printed big and black on both sides of the grid, so students can read it at a glance
+  g.fillStyle="#000"; g.font=F(700,2.9); g.textAlign="center"; g.textBaseline="middle";
+  L.id[0].forEach((b,d)=>{ g.fillText(String(d),(L.id[0][0].x-3.9)*k,(b.y+0.15)*k); g.fillText(String(d),(L.id[L.id.length-1][0].x+3.9)*k,(b.y+0.15)*k); });
   // form block
   if(ex.nforms>1){
     g.strokeStyle="#9aa"; g.lineWidth=0.3*k; roundRect(g,(en?18:128)*k,38*k,64*k,34*k,2*k); g.stroke();
@@ -317,9 +320,9 @@ async function renderSheet(ex, pxPerMm=11.811, marksOnly=false){
 }
 let _logo=null;
 function loadLogo(){ if(_logo) return _logo; _logo=new Promise(res=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src="../waed/rc-logo.png"; }); return _logo; }
-function bubble(g,k,b,label,fs){
+function bubble(g,k,b,label,fs,col="#b9bfbd",sz=0.62){
   g.beginPath(); g.arc(b.x*k,b.y*k,b.r*k,0,Math.PI*2); g.fillStyle="#fff"; g.fill(); g.stroke();
-  g.fillStyle="#b9bfbd"; g.font=`500 ${fs*0.62*k}px "IBM Plex Sans Arabic", Tahoma, sans-serif`; g.textAlign="center"; g.textBaseline="middle";
+  g.fillStyle=col; g.font=`500 ${fs*sz*k}px "IBM Plex Sans Arabic", Tahoma, sans-serif`; g.textAlign="center"; g.textBaseline="middle";
   g.fillText(label,b.x*k,b.y*k+0.15*k);
 }
 function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
