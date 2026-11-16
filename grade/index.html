@@ -670,6 +670,8 @@ function resultsHTML(){
    <div class="tile"><div class="v">${st.max}</div><div class="l">أعلى درجة</div></div>
    <div class="tile"><div class="v">${st.min}</div><div class="l">أدنى درجة</div></div>
    <div class="tile"><div class="v">${st.pass}</div><div class="l">ناجح (50% فأكثر)</div></div></div>`:'<p class="muted">ما فيه أوراق مصححة بعد. روح لتبويب التصحيح وصوّر أول ورقة.</p>'}
+   ${ex.results.length && !School.count() ? `<div class="note small" style="margin:10px 0;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>قائمة طلاب المدرسة مو محمّلة على هذا الجهاز، فما تطلع الأسماء والفصول. حمّلها برمز المدرسة وتتصنّف النتائج حسب الفصول.</span><button class="btn" id="goRoster3">تحميل القائمة</button></div>`
+     : ex.results.length && classes.length===1 && classes[0]===NO_CLS ? `<div class="note warn small" style="margin:10px 0">أرقام الطلاب في هالأوراق مو موجودة في قائمة المدرسة، فما تصنّفت حسب الفصول. تأكد إن الطلاب ظلّلوا رقم الهوية كامل.</div>` : ""}
    ${!UI.cls?summary:""}
    ${rs.length?`<div class="row" style="margin:12px 0 10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button>${multi?'<span class="small muted">فيه ورقة لكل فصل</span>':""}</div>
    <div class="tablewrap"><table><thead><tr><th>رقم الطالب</th><th>الاسم</th><th>الفصل</th>${ex.nforms>1?"<th>النموذج</th>":""}<th>الدرجة</th><th>النسبة</th><th></th></tr></thead><tbody>
@@ -716,6 +718,7 @@ function bind(){
   const on=(sel,ev,fn)=>{ const el=$(sel); if(el) el.addEventListener(ev,fn); };
   on("#goRoster","click",()=>{UI.view="roster";render();});
   on("#goRoster2","click",()=>{UI.view="roster";render();});
+  on("#goRoster3","click",()=>{UI.view="roster";render();});
   const schoolLoad=async(code,btn)=>{ if(!code){ toast("اكتب رمز المدرسة"); return; } btn.disabled=true; const t=btn.textContent; btn.textContent="جاري التحميل…";
     try{ const n=await School.fetch(code); toast("تم تحميل "+n+" طالب"); render(); }
     catch(err){ toast(err.message&&!/fetch|network|JSON/i.test(err.message)?err.message:"تعذّر الاتصال، تأكد من الإنترنت وجرّب مرة ثانية."); btn.disabled=false; btn.textContent=t; } };
