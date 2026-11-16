@@ -133,7 +133,6 @@ th{color:var(--muted);font-weight:500;font-size:12.5px}
 <body>
 <div class="brand"><div class="in"><img src="../waed/rc-logo.png" alt="الهيئة الملكية للجبيل وينبع"><div class="nm"><b>واعد</b><span>خدمة التصحيح الآلي — ثانوية الدفي</span></div><a href="../waed/">بوابة واعد</a></div></div>
 <div class="wrap" id="app"></div>
-<script src="students.js"></script>
 <div id="layer"></div>
 <script>
 "use strict";
@@ -171,8 +170,22 @@ const Store = {
   async deleteExam(ex){ this.exams=this.exams.filter(e=>e.id!==ex.id); this.local(); },
   saveRoster(){ this.local(); return Promise.resolve(); }
 };
-/* built-in school list (students.js) + the teacher's own additions */
-function student(id){ const r=Store.roster[id]; if(r) return typeof r==="string"?{name:r,cls:""}:r; const b=(window.DAFI_STUDENTS||{})[id]; return b?{name:b[0],cls:b[1]||""}:null; }
+/* school list: kept in a private Google Sheet; a teacher downloads it once with the school code and it stays on this device only */
+const School = {
+  KEY:"waed-grader-school", API:"https://script.google.com/macros/s/AKfycbz4ABnWXzuudzUtI46XwY-PYf7Qw7F37qWvDaJHiMyDN9sohvhj6-2zLETUiZbzBW62/exec", list:{}, updated:"", code:"",
+  load(){ try{ const o=JSON.parse(localStorage.getItem(this.KEY)||"null"); if(o&&o.list){ this.list=o.list; this.updated=o.updated||""; this.code=o.code||""; } }catch(e){} },
+  count(){ return Object.keys(this.list).length; },
+  async fetch(code){
+    const r=await fetch(this.API,{method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({code})});
+    const j=await r.json(); if(!j.ok) throw new Error(j.error||"تعذّر تحميل القائمة");
+    this.list=j.list||{}; this.updated=j.updated||""; this.code=code;
+    try{ localStorage.setItem(this.KEY, JSON.stringify({list:this.list, updated:this.updated, code})); }catch(e){}
+    return this.count();
+  },
+  clear(){ this.list={}; this.updated=""; this.code=""; try{ localStorage.removeItem(this.KEY); }catch(e){} }
+};
+/* the school list + the teacher's own additions (his own entries win) */
+function student(id){ const r=Store.roster[id]; if(r) return typeof r==="string"?{name:r,cls:""}:r; const b=School.list[id]; return b?{name:b[0],cls:b[1]||""}:null; }
 function sName(id){ const s=student(id); return s?s.name:""; }
 function sCls(id){ const s=student(id); return s?s.cls:""; }
 function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),ms))]); }
@@ -443,6 +456,7 @@ function homeHTML(){
   return `<header class="top"><div><h1>التصحيح الآلي</h1><div class="sub">صحّح أوراق الاختيار من متعدد بتصويرها بالجوال</div></div>
     <button class="btn" id="goRoster">قائمة الطلاب</button></header>
     ${storageNote()}
+    ${School.count()?"":`<div class="note small" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>أضف قائمة طلاب المدرسة مرة وحدة، وتطلع أسماء الطلاب مع درجاتهم تلقائيًا.</span><button class="btn" id="goRoster2">إضافة القائمة</button></div>`}
     <div class="card"><h2>الاختبارات</h2><div class="examlist">${list||'<p class="muted">ما فيه اختبارات بعد. أنشئ أول اختبار من الأسفل.</p>'}</div></div>
     <div class="card"><h2>اختبار من ملف Word</h2>
       <p class="small muted">ارفع ملف Word فيه الأسئلة والخيارات، ويسوي لك التطبيق حتى 6 نماذج بترتيب مختلف للأسئلة والخيارات، ويحط مفتاح كل نموذج تلقائيًا، ويعطيك أوراق الأسئلة بتصميم المدرسة جاهزة للطباعة (PDF وWord).</p>
@@ -463,8 +477,12 @@ function homeHTML(){
 }
 function rosterHTML(){
   const own=Object.entries(Store.roster).map(([k,v])=>{ const o=typeof v==="string"?{name:v,cls:""}:v; return [k,o.name,o.cls].filter(Boolean).join("، "); }).join("\n");
-  const builtin=Object.keys(window.DAFI_STUDENTS||{}).length;
+  const builtin=School.count();
   return `<header class="top"><div><h1>قائمة الطلاب</h1><div class="sub">${builtin?builtin+" طالب من قائمة المدرسة":"قائمة المدرسة غير مضافة"}${Object.keys(Store.roster).length?" • "+Object.keys(Store.roster).length+" أضفتهم أنت":""}</div></div><button class="btn" id="back">رجوع</button></header>
+  <div class="card"><h2>قائمة طلاب المدرسة</h2>${builtin?`<p class="small muted">محمّلة على هذا الجهاز: <b>${builtin}</b> طالب بأرقام هوياتهم${School.updated?" • آخر تحديث "+esc(School.updated):""}. الأسماء تطلع مع الدرجات تلقائيًا، ومحفوظة على جهازك فقط.</p>
+    <div class="row"><button class="btn pri" id="schoolRefresh">تحديث القائمة</button><button class="btn" id="schoolClear">حذفها من هذا الجهاز</button></div>`
+  :`<p class="small muted">اكتب رمز المدرسة مرة وحدة، وتنزل أسماء طلاب ثانوية الدفي وأرقام هوياتهم على جهازك، وتطلع الأسماء مع الدرجات تلقائيًا. الرمز تاخذه من إدارة البوابة.</p>
+    <div class="row"><input type="password" id="schoolCode" placeholder="رمز المدرسة" autocomplete="off" style="max-width:220px"><button class="btn pri" id="schoolGo">تحميل القائمة</button></div>`}</div>
   <div class="card"><h2>إضافة طلاب</h2><p class="small muted">${builtin?"أسماء طلاب المدرسة موجودة مسبقًا. ":""}تقدر تضيف طلاب أو تعدّل أسماء: ارفع ملف Excel من نور، أو الصق القائمة بحيث يكون كل طالب في سطر: الرقم، الاسم، الفصل.</p>
   <div class="row" style="margin-bottom:10px"><label class="btn" for="rosterFile">رفع ملف Excel</label><input type="file" id="rosterFile" accept=".xlsx,.xls,.csv" style="display:none"></div>
   <textarea id="rosterTxt" placeholder="1098765432، محمد أحمد العتيبي، ثاني ثانوي 3">${esc(own)}</textarea>
@@ -659,6 +677,13 @@ function settingsHTML(){
 function bind(){
   const on=(sel,ev,fn)=>{ const el=$(sel); if(el) el.addEventListener(ev,fn); };
   on("#goRoster","click",()=>{UI.view="roster";render();});
+  on("#goRoster2","click",()=>{UI.view="roster";render();});
+  const schoolLoad=async(code,btn)=>{ if(!code){ toast("اكتب رمز المدرسة"); return; } btn.disabled=true; const t=btn.textContent; btn.textContent="جاري التحميل…";
+    try{ const n=await School.fetch(code); toast("تم تحميل "+n+" طالب"); render(); }
+    catch(err){ toast(err.message&&!/fetch|network|JSON/i.test(err.message)?err.message:"تعذّر الاتصال، تأكد من الإنترنت وجرّب مرة ثانية."); btn.disabled=false; btn.textContent=t; } };
+  on("#schoolGo","click",e=>schoolLoad($("#schoolCode").value.trim(), e.currentTarget));
+  on("#schoolRefresh","click",e=>schoolLoad(School.code, e.currentTarget));
+  on("#schoolClear","click",()=>{ School.clear(); toast("انحذفت القائمة من هذا الجهاز"); render(); });
   on("#toPhone","click",()=>Share.show(UI.exam));
   on("#wordFile","change",e=>{ const f=e.target.files[0]; if(f) WordX.fromFile(f); });
   on("#dlExamPdf","click",()=>WordX.openPrint(UI.exam));
@@ -1382,7 +1407,7 @@ const SEED = {id:"ch5-1448", name:"اختبار الباب الخامس — ال
   keys:[[1,1,2,0,0,1,0,2,2,2,2,1,0,0,1],[1,1,0,1,0,0,2,2,2,2,0,0,1,1,2],[2,0,2,1,0,0,1,2,1,2,0,1,2,1,0],[1,2,2,0,0,2,1,0,0,0,1,2,1,2,1]], results:[], created:1763190000000};
 (async function boot(){
   $("#app").innerHTML=`<div class="card"><p class="muted">جاري التحميل…</p></div>`;
-  await Store.init();
+  await Store.init(); School.load();
   Store.exams.forEach(fixKeys);
   await Share.fromHash();
   render();
