@@ -659,7 +659,7 @@ function resultsHTML(){
   const ex=UI.exam, classes=classesOf(ex);
   if(UI.cls && !classes.includes(UI.cls)) UI.cls="";
   const all=ex.results.slice().sort((a,b)=>b.score-a.score), rs=UI.cls?all.filter(r=>clsOf(r)===UI.cls):all, st=stats(ex,rs);
-  const multi=classes.length>1;
+  const multi=classes.length>1 || (classes.length===1 && classes[0]!==NO_CLS);   // show the class bar even when only one class has been graded so far
   const summary = multi ? `<h3 style="margin:16px 0 8px;font-size:15px">حسب الفصول</h3><div class="tablewrap"><table><thead><tr><th>الفصل</th><th>الأوراق</th><th>المتوسط</th><th>أعلى</th><th>أدنى</th><th>ناجح</th></tr></thead><tbody>
     ${classes.map(c=>{ const t=stats(ex,all.filter(r=>clsOf(r)===c)); return `<tr data-cls="${esc(c)}" style="cursor:pointer"><td><b>${esc(c)}</b></td><td>${t.n}</td><td>${t.avg.toFixed(1)}</td><td>${t.max}</td><td>${t.min}</td><td>${t.pass} <span class="muted small">(${Math.round(t.pass/t.n*100)}%)</span></td></tr>`; }).join("")}
     </tbody></table></div>` : "";
@@ -845,7 +845,7 @@ async function exportXlsx(){
   const wb=XLSX.utils.book_new(); wb.Workbook={Views:[{RTL:true}]};
   const ws=XLSX.utils.aoa_to_sheet([head,...sorted.map(toRow)]); ws["!cols"]=[{wch:13},{wch:28},{wch:16}]; XLSX.utils.book_append_sheet(wb,ws,"النتائج");
   const classes=classesOf(ex);
-  if(classes.length>1){
+  if(classes.length>1 || (classes.length===1 && classes[0]!==NO_CLS)){
     const sum=[["الفصل","عدد الأوراق","المتوسط","من","أعلى درجة","أدنى درجة","ناجح","نسبة النجاح %"]];
     classes.forEach(c=>{ const t=stats(ex,sorted.filter(r=>clsOf(r)===c)); sum.push([c,t.n,Math.round(t.avg*10)/10,totalOf(ex),t.max,t.min,t.pass,Math.round(t.pass/t.n*1000)/10]); });
     const s2=XLSX.utils.aoa_to_sheet(sum); s2["!cols"]=[{wch:18}]; XLSX.utils.book_append_sheet(wb,s2,"ملخص الفصول");
