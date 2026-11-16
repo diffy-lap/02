@@ -666,10 +666,31 @@ function clsOf(r){ return sCls(r.sid)||NO_CLS; }
 function clsRank(c){ if(c===NO_CLS) return [9,0,c]; const g=/أول|1/.test(c)&&!/ثاني|ثالث/.test(c)?1:/ثاني/.test(c)?2:/ثالث/.test(c)?3:8; const n=+((c.match(/(\d+)\s*$/)||[])[1]||0); return [g,n,c]; }
 function clsSort(a,b){ const x=clsRank(a), y=clsRank(b); return x[0]-y[0]||x[1]-y[1]||x[2].localeCompare(y[2],"ar"); }
 function classesOf(ex){ return [...new Set(ex.results.map(clsOf))].sort(clsSort); }
+/* change the student number of a saved result (wrong shading or misread), with the matching name shown live */
+function editSid(ex, sid){
+  const r=ex.results.find(x=>x.sid===sid); if(!r) return;
+  const L=$("#layer");
+  L.innerHTML=`<div class="modal"><div class="card" style="max-width:420px"><h2>تعديل رقم الطالب</h2>
+    <p class="small muted">الرقم الحالي: <span class="ltr">${esc(sid)}</span>${sName(sid)?" — "+esc(sName(sid)):""} • الدرجة ${r.score} / ${totalOf(ex)}</p>
+    <label class="f">رقم الطالب الصحيح<input type="text" id="esId" inputmode="numeric" dir="ltr" value="${esc(sid)}" autocomplete="off"></label>
+    <div id="esName" class="small" style="min-height:22px;margin:6px 0 10px"></div>
+    <div class="row"><button class="btn pri" id="esSave">حفظ</button><button class="btn" id="esCancel">إلغاء</button></div></div></div>`;
+  const inp=$("#esId"), out=$("#esName");
+  const show=()=>{ const v=toLatinDigits(inp.value.trim()), st=student(v);
+    out.innerHTML = !v ? "" : st ? `<b>${esc(st.name)}</b>${st.cls?" — "+esc(st.cls):""}`
+      : `<span class="muted">${School.count()?"الرقم مو موجود في قائمة المدرسة":"قائمة المدرسة مو محمّلة على هذا الجهاز"}</span>`;
+    if(v && v!==sid && ex.results.some(x=>x.sid===v)) out.innerHTML+=`<div style="color:var(--danger,#b42318)">فيه نتيجة محفوظة بهذا الرقم، وبتنستبدل بهذي.</div>`; };
+  inp.oninput=show; show(); inp.focus(); inp.select();
+  $("#esCancel").onclick=()=>{ L.innerHTML=""; };
+  $("#esSave").onclick=()=>{ const v=toLatinDigits(inp.value.trim());
+    if(!/^\d{3,10}$/.test(v)){ toast("اكتب رقم الطالب بالأرقام"); return; }
+    if(v!==sid){ ex.results=ex.results.filter(x=>x===r||x.sid!==v); r.sidRead=r.sidRead||sid; r.sid=v; r.manual=true; Store.saveExam(ex); toast("تم تعديل الرقم"+(sName(v)?": "+sName(v):"")); }
+    L.innerHTML=""; render(); };
+}
 function resultsHTML(){
   const ex=UI.exam;
   // results saved before the check-digit fix: correct a misread number when exactly one listed student matches
-  let fixed=0; ex.results.forEach(r=>{ const f=fixId(r.sid); if(f!==r.sid && !ex.results.some(o=>o.sid===f)){ r.sidRead=r.sid; r.sid=f; fixed++; } });
+  let fixed=0; ex.results.forEach(r=>{ if(r.manual) return; const f=fixId(r.sid); if(f!==r.sid && !ex.results.some(o=>o.sid===f)){ r.sidRead=r.sid; r.sid=f; fixed++; } });
   if(fixed){ Store.saveExam(ex); setTimeout(()=>toast("تصحّح رقم "+fixed+(fixed===1?" طالب انقرا":" طلاب انقرت")+" غلط بخانة وحدة"),50); }
   const classes=classesOf(ex);
   if(UI.cls && !classes.includes(UI.cls)) UI.cls="";
@@ -690,7 +711,7 @@ function resultsHTML(){
    ${!UI.cls?summary:""}
    ${rs.length?`<div class="row" style="margin:12px 0 10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button>${multi?'<span class="small muted">فيه ورقة لكل فصل</span>':""}</div>
    <div class="tablewrap"><table><thead><tr><th>رقم الطالب</th><th>الاسم</th><th>الفصل</th>${ex.nforms>1?"<th>النموذج</th>":""}<th>الدرجة</th><th>النسبة</th><th></th></tr></thead><tbody>
-   ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td><button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
+   ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td style="white-space:nowrap"><button class="btn ghost small" data-edit="${esc(r.sid)}">تعديل الرقم</button> <button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
    </tbody></table></div>`:""}</div>`;
 }
 function itemStats(ex, f){
@@ -808,6 +829,7 @@ function bind(){
     toast(`تم حفظ ${sName(R.id)||R.id}: ${rec.score} / ${totalOf(ex)}`); nextInQueue();
   });
   on("#skipRes","click",()=>nextInQueue());
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editSid(UI.exam, b.dataset.edit));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
     if(!await confirmBox("حذف نتيجة الطالب "+b.dataset.del+"؟","حذف")) return;
     UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); render(); });
