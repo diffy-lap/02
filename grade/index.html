@@ -187,6 +187,17 @@ const School = {
 /* the school list + the teacher's own additions (his own entries win) */
 function student(id){ const r=Store.roster[id]; if(r) return typeof r==="string"?{name:r,cls:""}:r; const b=School.list[id]; return b?{name:b[0],cls:b[1]||""}:null; }
 function sName(id){ const s=student(id); return s?s.name:""; }
+/* Saudi national/iqama numbers carry a Luhn check digit. A misread or mis-shaded digit breaks it, so when the read
+   number is not on the school list, look for the one listed student whose number differs in a single digit
+   (or fills the one unreadable "?" digit) and use that. */
+function luhnOK(id){ if(!/^\d{10}$/.test(id)) return false; let t=0; for(let i=0;i<10;i++){ let d=+id[i]; if(i%2===0){ d*=2; if(d>9) d-=9; } t+=d; } return t%10===0; }
+function fixId(id){
+  id=String(id||""); if(id.length!==10 || Store.roster[id] || School.list[id] || !School.count()) return id;
+  const q=(id.match(/\?/g)||[]).length; if(q>1) return id;
+  if(!q && luhnOK(id)) return id;   // a valid number that just isn't on the list: leave it
+  const hits=[]; for(const k in School.list){ let diff=0; for(let i=0;i<10&&diff<2;i++) if(k[i]!==id[i]) diff++; if(diff===1){ hits.push(k); if(hits.length>1) break; } }
+  return hits.length===1 ? hits[0] : id;
+}
 function sCls(id){ const s=student(id); return s?s.cls:""; }
 function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej({code:"timeout"}),ms))]); }
 
@@ -656,7 +667,11 @@ function clsRank(c){ if(c===NO_CLS) return [9,0,c]; const g=/أول|1/.test(c)&&
 function clsSort(a,b){ const x=clsRank(a), y=clsRank(b); return x[0]-y[0]||x[1]-y[1]||x[2].localeCompare(y[2],"ar"); }
 function classesOf(ex){ return [...new Set(ex.results.map(clsOf))].sort(clsSort); }
 function resultsHTML(){
-  const ex=UI.exam, classes=classesOf(ex);
+  const ex=UI.exam;
+  // results saved before the check-digit fix: correct a misread number when exactly one listed student matches
+  let fixed=0; ex.results.forEach(r=>{ const f=fixId(r.sid); if(f!==r.sid && !ex.results.some(o=>o.sid===f)){ r.sidRead=r.sid; r.sid=f; fixed++; } });
+  if(fixed){ Store.saveExam(ex); setTimeout(()=>toast("تصحّح رقم "+fixed+(fixed===1?" طالب انقرا":" طلاب انقرت")+" غلط بخانة وحدة"),50); }
+  const classes=classesOf(ex);
   if(UI.cls && !classes.includes(UI.cls)) UI.cls="";
   const all=ex.results.slice().sort((a,b)=>b.score-a.score), rs=UI.cls?all.filter(r=>clsOf(r)===UI.cls):all, st=stats(ex,rs);
   const multi=classes.length>1 || (classes.length===1 && classes[0]!==NO_CLS);   // show the class bar even when only one class has been graded so far
@@ -822,7 +837,7 @@ async function nextInQueue(){
     const img=await fileToImage(file); const res=OMR.read(img, ex);
     if(!res.ok){ toast("ما قدرت ألقى المربعات السوداء الأربعة. صوّر الورقة كاملة بإضاءة أوضح."); nextInQueue(); return; }
     const flags=res.answers.filter(a=>a<0).length;
-    UI.review={answers:res.answers, id:res.id, form:res.form<0?0:res.form, formBad:res.form<0, flags, canvas:res.G.canvas, H:res.H, L:res.L};
+    UI.review={answers:res.answers, id:fixId(res.id), form:res.form<0?0:res.form, formBad:res.form<0, flags, canvas:res.G.canvas, H:res.H, L:res.L};
   }catch(e){ toast("تعذّرت قراءة الصورة."); nextInQueue(); return; }
   render();
 }
@@ -1431,7 +1446,7 @@ const Live = {
       if(this.lostFrames>=3 && this.hold){ this.hold=null; this.status("جاهز للورقة اللي بعدها"); }
       this.loop(); return;
     }
-    this.lostFrames=0;
+    this.lostFrames=0; res.id=fixId(res.id);
     const sig=res.id+"|"+res.form+"|"+res.answers.join(",");
     // same sheet still in front of the camera after it was saved: wait until it is removed
     if(this.hold && this.hold===res.id){ this.loop(); return; }
@@ -1453,7 +1468,7 @@ const Live = {
     const r2=OMR.read(snap, ex, 1600); const R=r2.ok?r2:res;
     this.stop(false);
     UI.fromLive=true; UI.queue=[];
-    UI.review={answers:R.answers, id:R.id, form:R.form<0?0:R.form, formBad:ex.nforms>1&&R.form<0, flags:R.answers.filter(a=>a<0).length, canvas:R.G.canvas, H:R.H, L:R.L};
+    UI.review={answers:R.answers, id:fixId(R.id), form:R.form<0?0:R.form, formBad:ex.nforms>1&&R.form<0, flags:R.answers.filter(a=>a<0).length, canvas:R.G.canvas, H:R.H, L:R.L};
     render(); toast("القراءة تحتاج مراجعة، صحّحها واحفظ وترجع الكاميرا");
   },
   beep(){ try{ if(!this.ac) return; const o=this.ac.createOscillator(), g=this.ac.createGain(); o.frequency.value=1250; g.gain.value=0.08; o.connect(g); g.connect(this.ac.destination); o.start(); o.stop(this.ac.currentTime+0.12); }catch(e){} }
