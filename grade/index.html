@@ -167,8 +167,31 @@ const Store = {
   },
   local(){ try{ localStorage.setItem("waed-grader", JSON.stringify({exams:this.exams, roster:this.roster})); }catch(e){ toast("تعذّر الحفظ على الجهاز، صدّر النتائج لملف Excel."); } },
   saveExam(){ this.local(); return Promise.resolve(); },
-  async deleteExam(ex){ this.exams=this.exams.filter(e=>e.id!==ex.id); this.local(); },
+  async deleteExam(ex){ this.exams=this.exams.filter(e=>e.id!==ex.id); this.local(); Pics.delExam(ex); },
   saveRoster(){ this.local(); return Promise.resolve(); }
+};
+/* picture of each graded sheet, straightened to the page, kept on this device only (IndexedDB) for "view the sheet" in the results */
+const Pics = {
+  _db:null,
+  db(){ if(!this._db) this._db=new Promise(res=>{ try{ const r=indexedDB.open("waed-grader-pics",1); r.onupgradeneeded=()=>r.result.createObjectStore("p"); r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); }catch(e){ res(null); } }); return this._db; },
+  key(ex,sid){ return ex.id+"|"+sid; },
+  async op(mode,fn){ const db=await this.db(); if(!db) return null; return new Promise(res=>{ try{ const t=db.transaction("p",mode), st=t.objectStore("p"); let out=null; fn(st,v=>out=v); t.oncomplete=()=>res(out); t.onerror=t.onabort=()=>res(null); }catch(e){ res(null); } }); },
+  get(ex,sid){ return this.op("readonly",(st,set)=>{ const r=st.get(this.key(ex,sid)); r.onsuccess=()=>set(r.result||null); }); },
+  put(ex,sid,blob){ return this.op("readwrite",st=>st.put(blob,this.key(ex,sid))); },
+  del(ex,sid){ return this.op("readwrite",st=>st.delete(this.key(ex,sid))); },
+  delExam(ex){ return this.op("readwrite",st=>st.delete(IDBKeyRange.bound(ex.id+"|",ex.id+"|\uffff"))); },
+  async rename(ex,a,b){ const p=await this.get(ex,a); if(p){ await this.put(ex,b,p); await this.del(ex,a); } },
+  /* warp the photo onto a flat A4 page (4 px per mm) and keep it as a small JPEG */
+  save(ex,sid,src,H){ if(!src||!H) return; setTimeout(()=>{ try{
+    const k=4, W=210*k, Ht=297*k, sw=src.width, sh=src.height, sd=src.getContext("2d").getImageData(0,0,sw,sh).data;
+    const cv=document.createElement("canvas"); cv.width=W; cv.height=Ht; const g=cv.getContext("2d"), im=g.createImageData(W,Ht), d=im.data;
+    for(let y=0;y<Ht;y++){ const my=(y+0.5)/k; for(let x=0;x<W;x++){ const mx=(x+0.5)/k;
+      const zz=H[6]*mx+H[7]*my+H[8], u=(H[0]*mx+H[1]*my+H[2])/zz, v=(H[3]*mx+H[4]*my+H[5])/zz, o=(y*W+x)*4;
+      const sx=Math.round(u), sy=Math.round(v);
+      if(sx<0||sy<0||sx>=sw||sy>=sh){ d[o]=d[o+1]=d[o+2]=255; } else { const q=(sy*sw+sx)*4; d[o]=sd[q]; d[o+1]=sd[q+1]; d[o+2]=sd[q+2]; }
+      d[o+3]=255; } }
+    g.putImageData(im,0,0); cv.toBlob(b=>{ if(b) this.put(ex,sid,b); },"image/jpeg",0.72);
+  }catch(e){} },30); }
 };
 /* school list: kept in a private Google Sheet; a teacher downloads it once with the school code and it stays on this device only */
 const School = {
@@ -669,6 +692,29 @@ function clsOf(r){ return sCls(r.sid)||NO_CLS; }
 function clsRank(c){ if(c===NO_CLS) return [9,0,c]; const g=/أول|1/.test(c)&&!/ثاني|ثالث/.test(c)?1:/ثاني/.test(c)?2:/ثالث/.test(c)?3:8; const n=+((c.match(/(\d+)\s*$/)||[])[1]||0); return [g,n,c]; }
 function clsSort(a,b){ const x=clsRank(a), y=clsRank(b); return x[0]-y[0]||x[1]-y[1]||x[2].localeCompare(y[2],"ar"); }
 function classesOf(ex){ return [...new Set(ex.results.map(clsOf))].sort(clsSort); }
+/* the saved picture of a student's sheet with his answers marked: green = right, red = wrong, dashed green = the right answer he missed */
+async function viewSheet(ex, sid){
+  const order=(UI.viewOrder&&UI.viewOrder.includes(sid))?UI.viewOrder:ex.results.map(r=>r.sid);
+  const r=ex.results.find(x=>x.sid===sid); if(!r) return; const i=order.indexOf(sid), L=$("#layer");
+  const st=student(sid), blob=await Pics.get(ex,sid);
+  L.innerHTML=`<div class="modal" id="svBack"><div class="card" style="max-width:760px;max-height:94vh;overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div><h2 style="margin:0">${esc(st?st.name:sid)}</h2><div class="small muted"><span class="ltr">${esc(sid)}</span>${st&&st.cls?" • "+esc(st.cls):""}${ex.nforms>1?" • نموذج "+FORM_LET[r.form]:""}</div></div>
+      <div style="font-size:22px;font-weight:700">${r.score} <span class="small muted">/ ${totalOf(ex)}</span></div></div>
+    ${blob?`<canvas id="svC" style="width:100%;height:auto;margin-top:10px;border:1px solid var(--line,#ddd);border-radius:8px"></canvas>
+      <p class="small muted" style="margin:6px 0 0">أخضر: إجابة صحيحة • أحمر: إجابة خاطئة • أخضر منقّط: الإجابة الصحيحة اللي فاتته</p>`
+    :`<div class="note small" style="margin-top:12px">ما فيه صورة محفوظة لهذي الورقة. الصور تنحفظ للأوراق اللي تنصحح بالكاميرا أو الصور من الحين، على هذا الجهاز فقط.</div>`}
+    <div class="row" style="margin-top:12px;justify-content:space-between"><div class="row"><button class="btn" id="svPrev" ${i>0?"":"disabled"}>السابق</button><button class="btn" id="svNext" ${i>=0&&i<order.length-1?"":"disabled"}>التالي</button></div><button class="btn pri" id="svClose">إغلاق</button></div></div></div>`;
+  $("#svClose").onclick=()=>{ L.innerHTML=""; };
+  $("#svBack").onclick=e=>{ if(e.target.id==="svBack") L.innerHTML=""; };
+  $("#svPrev").onclick=()=>viewSheet(ex,order[i-1]); $("#svNext").onclick=()=>viewSheet(ex,order[i+1]);
+  if(!blob) return;
+  const img=await new Promise(res=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>res(null); im.src=URL.createObjectURL(blob); }); if(!img) return;
+  const c=$("#svC"); if(!c) return; c.width=img.width; c.height=img.height; const g=c.getContext("2d"); g.drawImage(img,0,0); URL.revokeObjectURL(img.src);
+  const k=img.width/210, L2=layout(ex), key=ex.keys[r.form]||[]; g.lineWidth=Math.max(2,k*0.55);
+  const ring=(b,col,dash)=>{ g.strokeStyle=col; g.setLineDash(dash?[k,k*0.8]:[]); g.beginPath(); g.arc(b.x*k,b.y*k,b.r*k*1.35,0,7); g.stroke(); g.setLineDash([]); };
+  L2.q.forEach((q,qi)=>{ const a=r.ans[qi], kk=key[qi]; if(a>=0) ring(q.opts[a], a===kk?"#16a34a":"#dc2626"); if(kk>=0 && a!==kk) ring(q.opts[kk],"#16a34a",true); });
+}
 /* change the student number of a saved result (wrong shading or misread), with the matching name shown live */
 function editSid(ex, sid){
   const r=ex.results.find(x=>x.sid===sid); if(!r) return;
@@ -687,17 +733,18 @@ function editSid(ex, sid){
   $("#esCancel").onclick=()=>{ L.innerHTML=""; };
   $("#esSave").onclick=()=>{ const v=toLatinDigits(inp.value.trim());
     if(!/^\d{3,10}$/.test(v)){ toast("اكتب رقم الطالب بالأرقام"); return; }
-    if(v!==sid){ ex.results=ex.results.filter(x=>x===r||x.sid!==v); r.sidRead=r.sidRead||sid; r.sid=v; r.manual=true; Store.saveExam(ex); toast("تم تعديل الرقم"+(sName(v)?": "+sName(v):"")); }
+    if(v!==sid){ ex.results=ex.results.filter(x=>x===r||x.sid!==v); r.sidRead=r.sidRead||sid; r.sid=v; r.manual=true; Store.saveExam(ex); Pics.rename(ex,sid,v); toast("تم تعديل الرقم"+(sName(v)?": "+sName(v):"")); }
     L.innerHTML=""; render(); };
 }
 function resultsHTML(){
   const ex=UI.exam;
   // results saved before the check-digit fix: correct a misread number when exactly one listed student matches
-  let fixed=0; ex.results.forEach(r=>{ if(r.manual) return; const f=fixId(r.sid); if(f!==r.sid && !ex.results.some(o=>o.sid===f)){ r.sidRead=r.sid; r.sid=f; fixed++; } });
+  let fixed=0; ex.results.forEach(r=>{ if(r.manual) return; const f=fixId(r.sid); if(f!==r.sid && !ex.results.some(o=>o.sid===f)){ Pics.rename(ex,r.sid,f); r.sidRead=r.sid; r.sid=f; fixed++; } });
   if(fixed){ Store.saveExam(ex); setTimeout(()=>toast("تصحّح رقم "+fixed+(fixed===1?" طالب انقرا":" طلاب انقرت")+" غلط بخانة وحدة"),50); }
   const classes=classesOf(ex);
   if(UI.cls && !classes.includes(UI.cls)) UI.cls="";
   const all=ex.results.slice().sort((a,b)=>b.score-a.score), rs=UI.cls?all.filter(r=>clsOf(r)===UI.cls):all, st=stats(ex,rs);
+  UI.viewOrder=rs.map(r=>r.sid);
   const multi=classes.length>1 || (classes.length===1 && classes[0]!==NO_CLS);   // show the class bar even when only one class has been graded so far
   const summary = multi ? `<h3 style="margin:16px 0 8px;font-size:15px">حسب الفصول</h3><div class="tablewrap"><table><thead><tr><th>الفصل</th><th>الأوراق</th><th>المتوسط</th><th>أعلى</th><th>أدنى</th><th>ناجح</th></tr></thead><tbody>
     ${classes.map(c=>{ const t=stats(ex,all.filter(r=>clsOf(r)===c)); return `<tr data-cls="${esc(c)}" style="cursor:pointer"><td><b>${esc(c)}</b></td><td>${t.n}</td><td>${t.avg.toFixed(1)}</td><td>${t.max}</td><td>${t.min}</td><td>${t.pass} <span class="muted small">(${Math.round(t.pass/t.n*100)}%)</span></td></tr>`; }).join("")}
@@ -714,7 +761,7 @@ function resultsHTML(){
    ${!UI.cls?summary:""}
    ${rs.length?`<div class="row" style="margin:12px 0 10px"><button class="btn pri" id="xlsx" >تصدير النتائج والإجابات (Excel)</button>${multi?'<span class="small muted">فيه ورقة لكل فصل</span>':""}</div>
    <div class="tablewrap"><table><thead><tr><th>رقم الطالب</th><th>الاسم</th><th>الفصل</th>${ex.nforms>1?"<th>النموذج</th>":""}<th>الدرجة</th><th>النسبة</th><th></th></tr></thead><tbody>
-   ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td style="white-space:nowrap"><button class="btn ghost small" data-edit="${esc(r.sid)}">تعديل الرقم</button> <button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
+   ${rs.map(r=>{const p=Math.round(r.score/totalOf(ex)*100); return `<tr><td class="ltr">${esc(r.sid)}</td><td>${esc(sName(r.sid)||"—")}</td><td>${esc(sCls(r.sid)||"—")}</td>${ex.nforms>1?`<td>${FORM_LET[r.form]}</td>`:""}<td><b>${r.score}</b> / ${totalOf(ex)}</td><td><span class="pill ${p>=70?"g":p>=50?"w":"b"}">${p}%</span></td><td style="white-space:nowrap"><button class="btn ghost small" data-view="${esc(r.sid)}">الورقة</button> <button class="btn ghost small" data-edit="${esc(r.sid)}">تعديل الرقم</button> <button class="btn ghost small" data-del="${esc(r.sid)}">حذف</button></td></tr>`;}).join("")}
    </tbody></table></div>`:""}</div>`;
 }
 function itemStats(ex, f){
@@ -828,14 +875,15 @@ function bind(){
     const ex=UI.exam, R=UI.review;
     if(!R.id || R.id.includes("?")){ toast("اكتب رقم الطالب كاملًا قبل الحفظ."); return; }
     const rec={sid:R.id, form:R.form, ans:R.answers.map(a=>a<0?-1:a), score:scoreOf(ex,R.form,R.answers), at:Date.now()};
-    ex.results=ex.results.filter(r=>r.sid!==R.id); ex.results.push(rec); Store.saveExam(ex);
+    ex.results=ex.results.filter(r=>r.sid!==R.id); ex.results.push(rec); Store.saveExam(ex); Pics.save(ex,R.id,R.canvas,R.H);
     toast(`تم حفظ ${sName(R.id)||R.id}: ${rec.score} / ${totalOf(ex)}`); nextInQueue();
   });
   on("#skipRes","click",()=>nextInQueue());
   document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editSid(UI.exam, b.dataset.edit));
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{
     if(!await confirmBox("حذف نتيجة الطالب "+b.dataset.del+"؟","حذف")) return;
-    UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); render(); });
+    UI.exam.results=UI.exam.results.filter(r=>r.sid!==b.dataset.del); Store.saveExam(UI.exam); Pics.del(UI.exam,b.dataset.del); render(); });
+  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>viewSheet(UI.exam, b.dataset.view));
   on("#xlsx","click",exportXlsx);
   document.querySelectorAll("[data-cls]").forEach(b=>b.onclick=()=>{ UI.cls=b.dataset.cls; render(); });
   on("#saveSet","click",()=>{
@@ -1480,7 +1528,7 @@ const Live = {
     if(!idBad && !formBad && flags===0){
       const form=res.form<0?0:res.form, sc=scoreOf(ex,form,res.answers);
       ex.results=ex.results.filter(r=>r.sid!==res.id);
-      ex.results.push({sid:res.id, form, ans:res.answers.slice(), score:sc, at:Date.now()}); Store.saveExam(ex);
+      ex.results.push({sid:res.id, form, ans:res.answers.slice(), score:sc, at:Date.now()}); Store.saveExam(ex); Pics.save(ex,res.id,res.G.canvas,res.H);
       this.saved++; this.hold=res.id; this.last=null; this.beep(); if(navigator.vibrate) navigator.vibrate(80);
       const nm=sName(res.id);
       this.showRes(`<span class="sc">${sc} / ${totalOf(ex)}</span>${esc(nm||res.id)}${ex.nforms>1?" • نموذج "+FORM_LET[form]:""}`, "ok");
