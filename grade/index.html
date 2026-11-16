@@ -192,7 +192,7 @@ function withTimeout(p, ms){ return Promise.race([p, new Promise((_,rej)=>setTim
 
 /* ====================== exam model ====================== */
 function newExam(o){
-  const ex = {id:uid(), name:o.name||"اختبار جديد", subject:o.subject||"", lang:o.lang==="en"?"en":"ar", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
+  const ex = {id:uid(), lowMarks:true, name:o.name||"اختبار جديد", subject:o.subject||"", lang:o.lang==="en"?"en":"ar", nq:o.nq||20, nopt:o.nopt||3, nforms:o.nforms||1, idDigits:o.idDigits||10, keys:[], results:[], created:Date.now()};
   fixKeys(ex); return ex;
 }
 function fixKeys(ex){
@@ -219,6 +219,12 @@ function keyComplete(ex, f){ return ex.keys[f].every(v=>v>=0); }
 /* ====================== answer sheet layout (mm on A4) ====================== */
 const SHEET = {W:210, H:297, fid:[[14,14],[196,14],[196,283],[14,283]], fidSize:9, orient:[28,14], orientSize:4.5,
   white:[[14,32],[196,32],[196,265],[14,265]]};
+/* the two bottom squares sit at y=283 on older sheets; "lowMarks" sheets have them at y=250, inside every printer's printable area
+   (also used to rescue sheets whose bottom edge was cut off: the two squares are printed again, higher, onto the answered sheets) */
+const LOW_Y=250;
+function geo(ex){ const y=ex&&ex.lowMarks?LOW_Y:283;
+  return {fid:[[14,14],[196,14],[196,y],[14,y]], fidSize:SHEET.fidSize, orient:SHEET.orient, orientSize:SHEET.orientSize,
+    white:[[14,32],[196,32],[196,y-18],[14,y-18]], low:y}; }
 function layout(ex){
   const L = {id:[], form:[], q:[]}, en=isEn(ex);
   const n=ex.idDigits, x0 = en ? 210-(55+(n-1)*3.6) : 55-(n-1)*3.6;
@@ -237,15 +243,17 @@ function layout(ex){
 }
 
 /* ====================== render the printable sheet ====================== */
-async function renderSheet(ex, pxPerMm=11.811){
+async function renderSheet(ex, pxPerMm=11.811, marksOnly=false){
   useLang(ex); const en=isEn(ex), mx=x=>en?210-x:x;
   try{ await document.fonts.load('700 20px "IBM Plex Sans Arabic"'); await document.fonts.load('400 20px "IBM Plex Sans Arabic"'); }catch(e){}
   const k=pxPerMm, cv=document.createElement("canvas"); cv.width=Math.round(SHEET.W*k); cv.height=Math.round(SHEET.H*k);
   const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height);
   const F=(w,mm)=>`${w} ${mm*k}px "IBM Plex Sans Arabic", Tahoma, sans-serif`;
   g.fillStyle="#000";
-  for(const [x,y] of SHEET.fid){ const s=SHEET.fidSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }
-  { const [x,y]=SHEET.orient, s=SHEET.orientSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }
+  const GE=geo(ex);
+  if(marksOnly){ GE.fid.slice(2).forEach(([x,y])=>{ const s=GE.fidSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }); return cv; }
+  for(const [x,y] of GE.fid){ const s=GE.fidSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }
+  { const [x,y]=GE.orient, s=GE.orientSize; g.fillRect((x-s/2)*k,(y-s/2)*k,s*k,s*k); }
   g.direction="rtl"; g.textAlign="center"; g.textBaseline="middle";
   const logo=await loadLogo(); if(logo){ const lh=12, lw=lh*logo.width/logo.height; g.drawImage(logo,(186-lw)*k,8.5*k,lw*k,lh*k); }
   const hx=(logo?186-12*400/304-2:184)*k;
@@ -363,7 +371,7 @@ const OMR = {
     return cands.sort((x,y)=>y.sc-x.sc).slice(0,30).map(x=>x.P);
   },
   read(img, ex, maxSide){
-    const G=this.toGray(img, maxSide||1600); const cands=this.findCorners(G);
+    const G=this.toGray(img, maxSide||1600); const cands=this.findCorners(G), GE=geo(ex);
     // each candidate quad: try 4 rotations, keep the one whose orientation mark is dark,
     // and accept the quad only if that mark is clearly darker than the paper (a real single sheet)
     let H=null;
@@ -371,22 +379,22 @@ const OMR = {
       let bestH=null, bestO=1e9;
       for(let r=0;r<4;r++){
         const dst=[0,1,2,3].map(i=>P[(i+r)%4]);
-        const h=homography(SHEET.fid, dst.map(p=>[p.cx,p.cy]));
-        const o=this.mean(G,h,SHEET.orient[0],SHEET.orient[1],1.4);
+        const h=homography(GE.fid, dst.map(p=>[p.cx,p.cy]));
+        const o=this.mean(G,h,GE.orient[0],GE.orient[1],1.4);
         if(o<bestO){bestO=o;bestH=h;}
       }
-      const w=SHEET.white.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,3),0)/4;
-      const kk=SHEET.fid.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,2.5),0)/4;
+      const w=GE.white.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,3),0)/4;
+      const kk=GE.fid.reduce((t,[x,y])=>t+this.mean(G,bestH,x,y,2.5),0)/4;
       const side=[[24,14],[14,24],[24,24],[105,14],[40,283],[105,283],[170,283],[14,100],[14,200],[196,100],[196,200]].map(([x,y])=>this.mean(G,bestH,x,y,1.2)); // blank margins must be light
       // the orientation mark must be its own small square blob exactly where this quad predicts it
-      const [ox,oy]=applyH(bestH,SHEET.orient[0],SHEET.orient[1]), fn=P.reduce((t,q)=>t+q.n,0)/4, fs=Math.sqrt(fn);
+      const [ox,oy]=applyH(bestH,GE.orient[0],GE.orient[1]), fn=P.reduce((t,q)=>t+q.n,0)/4, fs=Math.sqrt(fn);
       const om=this._blobs.find(q=>Math.hypot(q.cx-ox,q.cy-oy)<fs*0.45 && q.n>fn*0.1 && q.n<fn*0.5);
       if(om && w-bestO > 0.6*(w-kk) && Math.min(...side) > kk+0.55*(w-kk)){ H=bestH; break; }
     }
     if(!H) return {ok:false, reason:"corners", G};
-    const W=SHEET.white.map(([x,y])=>this.mean(G,H,x,y,3));
-    const B=SHEET.fid.map(([x,y])=>this.mean(G,H,x,y,2.5));
-    const interp=(arr,x,y)=>{ const u=(x-14)/182, v=(y-14)/269; return (1-u)*(1-v)*arr[0]+u*(1-v)*arr[1]+u*v*arr[2]+(1-u)*v*arr[3]; };
+    const W=GE.white.map(([x,y])=>this.mean(G,H,x,y,3));
+    const B=GE.fid.map(([x,y])=>this.mean(G,H,x,y,2.5));
+    const interp=(arr,x,y)=>{ const u=(x-14)/182, v=(y-14)/(GE.low-14); return (1-u)*(1-v)*arr[0]+u*(1-v)*arr[1]+u*v*arr[2]+(1-u)*v*arr[3]; };
     const fill=b=>{ const m=this.mean(G,H,b.x,b.y,b.r*0.62); const w=interp(W,b.x,b.y), k=interp(B,b.x,b.y); return Math.max(0,Math.min(1,(w-m)/Math.max(20,w-k))); };
     const L=layout(ex);
     const pick=scores=>{ const idx=scores.map((s,i)=>[s,i]).sort((a,b)=>b[0]-a[0]); const [t,ti]=idx[0], s2=idx[1]?idx[1][0]:0;
@@ -535,6 +543,14 @@ function sheetHTML(){
     ${n===2?'<p class="small muted">نموذجين جنب بعض على ورقة A4 بالعرض، قصّها من الخط المنقط في النص. كل نصف يُصحَّح لحاله.</p>':""}
     <canvas id="sheetPrev" class="sheetprev" style="${n===2?"max-width:560px":""}" aria-label="معاينة ورقة الإجابة"></canvas>
     <div class="row"><button class="btn pri" id="dlSheet">تحميل ورقة الإجابة (PDF)</button><button class="btn" id="dlKey">تحميل نموذج الإجابة (PDF)</button></div></div>
+    ${!UI.exam.lowMarks||UI.exam.rescued?`<div class="card"><h2>انطبعت الأوراق بدون المربعين اللي تحت؟</h2>
+    ${UI.exam.rescued?`<div class="note small" style="margin-bottom:8px">التطبيق الحين يقرا المربعين البديلين. اطبعهم على كل الأوراق قبل التصحيح، حتى الأوراق اللي انطبعت سليمة.</div>`:""}
+    <p class="small muted">بعض الطابعات تقص أسفل الصفحة فيضيع المربعين السفليين، والتطبيق ما يقدر يقرا الورقة بدونهم. الحل بدون ما يعيد الطلاب الحل:</p>
+    <ol class="small" style="margin:6px 0 10px;padding-inline-start:20px;line-height:1.9">
+      <li>حمّل ملف «المربعين البديلين»: صفحة فاضية فيها مربعين أسودين أعلى من مكانهم الأصلي بحوالي 3 سم، في الهامشين الفاضيين يمين ويسار الورقة.</li>
+      <li>جرّبه أول على ورقة إجابة فاضية: حطها في درج الطابعة بنفس الوجه والاتجاه اللي انطبعت فيه أول مرة، واطبع بحجم فعلي 100%، وتأكد إن المربعين طلعوا في الهامش وما غطوا أي فقاعة.</li>
+      <li>إذا ضبطت، اطبعه على كل أوراق الطلاب المحلولة، وبعدها صحّح عادي.</li></ol>
+    <div class="row"><button class="btn pri" id="dlMarks">تحميل المربعين البديلين (PDF)</button>${UI.exam.rescued?'<button class="btn" id="undoMarks">رجوع للمربعات الأصلية</button>':""}</div></div>`:""}
     ${UI.exam.bank?`<div class="card"><h2>أوراق الأسئلة</h2>
     <p class="small muted">كل نموذج بصفحاته مع رأس المدرسة ومربعات بيانات الطالب، والصيغ الكيميائية مثل H2O تنكتب أرقامها صغيرة تلقائيًا. نسخة PDF جاهزة للطباعة، ونسخة Word لو تبي تعدّل.</p>
     <details ${WordX.hdr(UI.exam).grade?"":"open"}><summary class="small"><b>بيانات رأس الورقة</b></summary>${WordX.hdrFields(WordX.hdr(UI.exam),"data-hdr")}</details>
@@ -570,15 +586,23 @@ async function downloadKeyPdf(ex){
   await DL.save({filename:"نموذج الإجابة - "+ex.name+".pdf", data:pdf.output("blob")});
 }
 /* sheet pages: one A4 portrait sheet, or two sheets side by side on A4 landscape (each = A5) */
-async function sheetPage(ex, perPage, dpi){
+async function sheetPage(ex, perPage, dpi, marksOnly=false){
   const mm=dpi/25.4;
-  if(perPage===1) return {cv:await renderSheet(ex, mm), w:210, h:297};
-  const s=148.5/210, one=await renderSheet(ex, mm*s);
+  if(perPage===1) return {cv:await renderSheet(ex, mm, marksOnly), w:210, h:297};
+  const s=148.5/210, one=await renderSheet(ex, mm*s, marksOnly);
   const cv=document.createElement("canvas"); cv.width=Math.round(297*mm); cv.height=Math.round(210*mm);
   const g=cv.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,cv.width,cv.height);
   const half=148.5*mm; g.drawImage(one,0,0,half,cv.height); g.drawImage(one,half,0,half,cv.height);
-  g.strokeStyle="#999"; g.lineWidth=Math.max(1,0.25*mm); g.setLineDash([2*mm,1.6*mm]); g.beginPath(); g.moveTo(half,4*mm); g.lineTo(half,cv.height-4*mm); g.stroke();
+  if(!marksOnly){ g.strokeStyle="#999"; g.lineWidth=Math.max(1,0.25*mm); g.setLineDash([2*mm,1.6*mm]); g.beginPath(); g.moveTo(half,4*mm); g.lineTo(half,cv.height-4*mm); g.stroke(); }
   return {cv, w:297, h:210};
+}
+/* only the two raised bottom squares, to print onto answer sheets whose bottom squares were cut off */
+async function downloadMarksPdf(ex, perPage){
+  if(!window.jspdf){ toast("مكتبة PDF ما تحمّلت، تأكد من الاتصال."); return; }
+  const P=await sheetPage(ex, perPage, 300, true);
+  const {jsPDF}=window.jspdf, pdf=new jsPDF({orientation:P.w>P.h?"landscape":"portrait", unit:"mm", format:"a4", compress:true});
+  pdf.addImage(P.cv.toDataURL("image/png"), "PNG", 0, 0, P.w, P.h, undefined, "FAST");
+  await DL.save({filename:"المربعات البديلة - "+ex.name+(perPage===2?" (نموذجين)":"")+".pdf", data:pdf.output("blob")});
 }
 async function downloadSheetPdf(ex, perPage){
   if(!window.jspdf){ toast("مكتبة PDF ما تحمّلت، تأكد من الاتصال."); return; }
@@ -730,6 +754,11 @@ function bind(){
   on("#dlSheet","click",async()=>{
     try{ await downloadSheetPdf(UI.exam, UI.perPage||1); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); }
   });
+  on("#dlMarks","click",async()=>{ const ex=UI.exam;
+    if(!ex.lowMarks){ ex.lowMarks=true; ex.rescued=true; Store.saveExam(ex); }
+    try{ await downloadMarksPdf(ex, UI.perPage||1); }catch(e){ if(e&&e.code!=="declined") toast("تعذّر تجهيز الملف."); }
+    render(); });
+  on("#undoMarks","click",()=>{ const ex=UI.exam; ex.lowMarks=false; ex.rescued=false; Store.saveExam(ex); toast("رجع التطبيق يقرا المربعات الأصلية"); render(); });
   on("#liveCam","click",()=>Live.start());
   on("#shot","change",e=>startScan([...e.target.files]));
   on("#many","change",e=>startScan([...e.target.files]));
@@ -1221,7 +1250,7 @@ document.querySelectorAll(".pg").forEach(function(p){p.classList.toggle("hide",v
 const Share = {
   pack(ex){
     const k=ex.keys.slice(0,ex.nforms).map(a=>a.map(v=>v<0?"-":String(v)).join(""));
-    const o={v:1,id:ex.id,n:ex.name,s:ex.subject||"",l:ex.lang||"ar",q:ex.nq,o:ex.nopt,f:ex.nforms,d:ex.idDigits,k,pm:ex.ptsMode,ps:ex.ptsSame};
+    const o={v:1,lm:ex.lowMarks?1:0,id:ex.id,n:ex.name,s:ex.subject||"",l:ex.lang||"ar",q:ex.nq,o:ex.nopt,f:ex.nforms,d:ex.idDigits,k,pm:ex.ptsMode,ps:ex.ptsSame};
     if(ex.ptsMode==="each") o.pq=ex.qpts;
     const b=new TextEncoder().encode(JSON.stringify(o)); let bin=""; b.forEach(c=>bin+=String.fromCharCode(c));
     return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
@@ -1229,7 +1258,7 @@ const Share = {
   unpack(str){
     const b=atob(str.replace(/-/g,"+").replace(/_/g,"/")); const u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i);
     const o=JSON.parse(new TextDecoder().decode(u)); if(o.v!==1) throw 0;
-    const ex={id:o.id,name:o.n,subject:o.s,lang:o.l,nq:o.q,nopt:o.o,nforms:o.f,idDigits:o.d,ptsMode:o.pm,ptsSame:o.ps,qpts:o.pq||[],results:[],created:Date.now(),
+    const ex={id:o.id,lowMarks:!!o.lm,name:o.n,subject:o.s,lang:o.l,nq:o.q,nopt:o.o,nforms:o.f,idDigits:o.d,ptsMode:o.pm,ptsSame:o.ps,qpts:o.pq||[],results:[],created:Date.now(),
       keys:o.k.map(r=>[...r].map(c=>c==="-"?-1:+c))};
     fixKeys(ex); return ex;
   },
@@ -1251,7 +1280,7 @@ const Share = {
     history.replaceState(null,"",location.pathname);
     let ex; try{ ex=this.unpack(m[1]); }catch(e){ toast("الرابط غير صالح أو ناقص."); return false; }
     const old=Store.exams.find(e=>e.id===ex.id);
-    if(old){ Object.assign(old,{name:ex.name,subject:ex.subject,lang:ex.lang,nq:ex.nq,nopt:ex.nopt,nforms:ex.nforms,idDigits:ex.idDigits,keys:ex.keys,ptsMode:ex.ptsMode,ptsSame:ex.ptsSame,qpts:ex.qpts});
+    if(old){ Object.assign(old,{lowMarks:ex.lowMarks,name:ex.name,subject:ex.subject,lang:ex.lang,nq:ex.nq,nopt:ex.nopt,nforms:ex.nforms,idDigits:ex.idDigits,keys:ex.keys,ptsMode:ex.ptsMode,ptsSame:ex.ptsSame,qpts:ex.qpts});
       fixKeys(old); rescore(old); ex=old; toast("تم تحديث الاختبار من الرابط"); }
     else { Store.exams.push(ex); toast("تمت إضافة الاختبار «"+ex.name+"»"); }
     Store.saveExam(ex); UI.exam=ex; UI.view="exam"; UI.tab="scan"; UI.form=0; UI.anForm=ex.nforms>1?-1:0;
